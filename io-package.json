@@ -1,0 +1,84 @@
+{
+	"common": {
+		"name": "cron_scenes",
+		"version": "0.0.1",
+		"news": {
+			"0.0.1": {
+				"en": "initial release",
+				"de": "Erstveröffentlichung",
+				"ru": "Начальная версия",
+				"pt": "lançamento inicial",
+				"nl": "Eerste uitgave",
+				"fr": "Première version",
+				"it": "Versione iniziale",
+				"es": "Versión inicial",
+				"pl": "Pierwsze wydanie",
+				"uk": "Початкова версія",
+				"zh-cn": "首次出版"
+			}
+		},
+		"titleLang": {
+			"en": "cron_scenes",
+			"de": "cron_scenes",
+			"ru": "cron_scenes",
+			"pt": "CRON_SCENES",
+			"nl": "cron_scenes",
+			"fr": "cron_scenes",
+			"it": "cron_scenes",
+			"es": "cron_scenes",
+			"pl": "cron_ssenes",
+			"uk": "cron_scenes",
+			"zh-cn": "cron_scenes"
+		},
+		"desc": {
+			"en": "cron_scenes",
+			"de": "cron_scenes",
+			"ru": "cron_scenes",
+			"pt": "CRON_SCENES",
+			"nl": "cron_scenes",
+			"fr": "cron_scenes",
+			"it": "cron_scenes",
+			"es": "cron_scenes",
+			"pl": "cron_ssenes",
+			"uk": "cron_scenes",
+			"zh-cn": "cron_scenes"
+		},
+		"authors": ["kuen_je <jens.kuenemund@gmx.de>"],
+		"keywords": ["cronjob"],
+		"licenseInformation": {
+			"type": "free",
+			"license": "Unlicense"
+		},
+		"platform": "Javascript/Node.js",
+		"icon": "cron_scenes.png",
+		"enabled": true,
+		"extIcon": "https://raw.githubusercontent.com/jkuenemund/ioBroker.cron_scenes/main/admin/cron_scenes.png",
+		"readme": "https://github.com/jkuenemund/ioBroker.cron_scenes/blob/main/README.md",
+		"loglevel": "info",
+		"tier": 3,
+		"mode": "daemon",
+		"type": "date-and-time",
+		"compact": true,
+		"connectionType": "local",
+		"dataSource": "poll",
+		"adminUI": {
+			"config": "materialize"
+		},
+		"dependencies": [
+			{
+				"js-controller": ">=6.0.11"
+			}
+		],
+		"globalDependencies": [
+			{
+				"admin": "7.0.23"
+			}
+		]
+	},
+	"native": {
+		"option1": true,
+		"option2": "42"
+	},
+	"objects": [],
+	"instanceObjects": []
+}

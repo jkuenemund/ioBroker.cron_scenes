@@ -1,0 +1,147 @@
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var utils = __toESM(require("@iobroker/adapter-core"));
+var import_CronJobManager = require("./lib/CronJobManager");
+class CronScenes extends utils.Adapter {
+  cronJobManager;
+  constructor(options = {}) {
+    super({
+      ...options,
+      name: "cron_scenes"
+    });
+    this.on("ready", this.onReady.bind(this));
+    this.on("stateChange", this.onStateChange.bind(this));
+    this.on("objectChange", this.onObjectChange.bind(this));
+    this.on("unload", this.onUnload.bind(this));
+    this.cronJobManager = new import_CronJobManager.CronJobManager(this);
+  }
+  /**
+   * Is called when databases are connected and adapter received configuration.
+   */
+  async onReady() {
+    this.log.info("config cronFolder: " + this.config.cronFolder);
+    this.log.info("config checkInterval: " + this.config.checkInterval);
+    this.log.info("config enableLogging: " + this.config.enableLogging);
+    await this.setObjectNotExistsAsync("testVariable", {
+      type: "state",
+      common: {
+        name: "testVariable",
+        type: "boolean",
+        role: "indicator",
+        read: true,
+        write: true
+      },
+      native: {}
+    });
+    this.subscribeStates("testVariable");
+    await this.setStateAsync("testVariable", true);
+    await this.setStateAsync("testVariable", { val: true, ack: true });
+    await this.setStateAsync("testVariable", { val: true, ack: true, expire: 30 });
+    this.log.info("Cron Scenes adapter started successfully");
+    this.cronJobManager.initialize();
+    const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
+    this.subscribeStates(`${cronFolder}.*`);
+  }
+  /**
+   * Is called when adapter shuts down - callback has to be called under any circumstances!
+   */
+  onUnload(callback) {
+    try {
+      this.cronJobManager.shutdown();
+      callback();
+    } catch (e) {
+      callback();
+    }
+  }
+  /**
+   * Is called if a subscribed object changes
+   */
+  onObjectChange(id, obj) {
+    if (obj) {
+      this.log.debug(`object ${id} changed`);
+      const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
+      if (id.startsWith(cronFolder)) {
+        this.log.debug(`Job object ${id} updated`);
+      }
+    } else {
+      this.log.debug(`object ${id} deleted`);
+      const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
+      if (id.startsWith(cronFolder)) {
+        this.cronJobManager.removeJob(id);
+      }
+    }
+  }
+  /**
+   * Is called if a subscribed state changes
+   */
+  onStateChange(id, state) {
+    if (state) {
+      this.log.debug(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
+      if (id.endsWith(".trigger") && state.val === true && !state.ack) {
+        const jobId = id.replace(".trigger", "");
+        this.log.info(`Manual trigger for job ${jobId}`);
+        this.cronJobManager.triggerJob(jobId).catch((error) => {
+          this.log.error(`Error triggering job ${jobId}: ${error}`);
+        });
+        this.setStateAsync(id, false, true);
+      }
+      if (id.endsWith(".status")) {
+        return;
+      }
+    } else {
+      this.log.debug(`state ${id} deleted`);
+    }
+  }
+  /**
+   * Handle job configuration changes
+   */
+  async handleJobConfigChange(id, config) {
+    try {
+      await this.cronJobManager.addOrUpdateJob(id, config);
+    } catch (error) {
+      this.log.error(`Error updating job ${id}: ${error}`);
+    }
+  }
+  // If you need to accept messages in your adapter, uncomment the following block and the corresponding line in the constructor.
+  // /**
+  //  * Some message was sent to this instance over message box. Used by email, pushover, text2speech, ...
+  //  * Using this method requires "common.messagebox" property to be set to true in io-package.json
+  //  */
+  // private onMessage(obj: ioBroker.Message): void {
+  // 	if (typeof obj === "object" && obj.message) {
+  // 		if (obj.command === "send") {
+  // 			// e.g. send email or pushover or whatever
+  // 			this.log.info("send command");
+  // 			// Send response in callback if required
+  // 			if (obj.callback) this.sendTo(obj.from, obj.command, "Message received", obj.callback);
+  // 		}
+  // 	}
+  // }
+}
+if (require.main !== module) {
+  module.exports = (options) => new CronScenes(options);
+} else {
+  (() => new CronScenes())();
+}
+//# sourceMappingURL=main.js.map
