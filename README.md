@@ -120,18 +120,62 @@ Kopiert den Wert aus einem anderen State - perfekt für dynamische Szenen:
 }
 ```
 
-##### ⚡ Type: `"expression"` (geplant)
+##### ⚡ Type: `"expression"` 🆕
 
-Evaluiert einen Ausdruck - für komplexe Berechnungen (zukünftige Funktion):
+Evaluiert JavaScript-Ausdrücke in sicherer Sandbox - für komplexe Berechnungen und Logik:
 
 ```json
 {
 	"id": "javascript.0.variables.result",
 	"type": "expression",
-	"value": "temperature + 2",
-	"description": "Temperatur plus 2 Grad"
+	"value": "Math.max(18, state('weather.0.temperature') + 2)",
+	"description": "Heizung: mindestens 18°C oder Außentemperatur + 2°C"
 }
 ```
+
+**Expression-Syntax:**
+
+- **State-Referenzen**: `state('adapter.instance.state')` oder `state["adapter.instance.state"]`
+- **Math-Funktionen**: `Math.max()`, `Math.min()`, `Math.round()`, `Math.abs()`, etc.
+- **Zeitstempel**: `now` (aktuelle Zeit in Millisekunden)
+- **Bedingte Logik**: `condition ? valueTrue : valueFalse`
+- **Vergleiche**: `>`, `<`, `===`, `!==`, `>=`, `<=`
+
+**Sicherheit:**
+
+- Läuft in isolierter V8-Instanz (8MB Memory-Limit, 5s Timeout)
+- Kein Zugriff auf Filesystem, Network oder System-APIs
+- Nur definierte State-Werte und Math-Objekt verfügbar
+
+#### 🔄 State vs. Expression - Wann verwende ich was?
+
+Für das Übernehmen von Werten aus anderen States gibt es **zwei Möglichkeiten**:
+
+##### **Type: `"state"` - Einfaches Kopieren**
+
+```json
+{
+	"id": "hm-rpc.0.Thermostat.SET_TEMPERATURE",
+	"type": "state",
+	"value": "weather.0.current.temperature"
+}
+```
+
+✅ **Verwende `state` wenn**: Du einen Wert 1:1 kopieren möchtest  
+✅ **Vorteile**: Einfach, schnell, klar verständlich
+
+##### **Type: `"expression"` - Mit Logik und Berechnung**
+
+```json
+{
+	"id": "hm-rpc.0.Thermostat.SET_TEMPERATURE",
+	"type": "expression",
+	"value": "Math.max(18, state('weather.0.current.temperature') + 2)"
+}
+```
+
+✅ **Verwende `expression` wenn**: Du Berechnungen, Bedingungen oder Logik brauchst  
+✅ **Vorteile**: Mächtig, flexibel, kann mehrere States kombinieren
 
 #### Rückwärtskompatibilität
 
@@ -235,6 +279,124 @@ Bestehende Jobs ohne `type`-Feld funktionieren weiterhin:
 			"type": "value",
 			"value": 0,
 			"description": "Jalousie komplett schließen"
+		}
+	],
+	"active": true,
+	"type": "recurring"
+}
+```
+
+### Toggle-Funktionen mit Expressions 🔄
+
+#### Licht-Toggle (Ein/Aus wechseln)
+
+```json
+{
+	"cron": "0 18 * * *",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.STATE",
+			"type": "expression",
+			"value": "!state('hm-rpc.0.Wohnzimmer.Licht.STATE')",
+			"description": "Licht umschalten: Ein → Aus, Aus → Ein"
+		}
+	],
+	"active": true,
+	"type": "recurring"
+}
+```
+
+#### Intelligenter Helligkeits-Toggle
+
+```json
+{
+	"cron": "0 22 * * *",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.LEVEL",
+			"type": "expression",
+			"value": "state('hm-rpc.0.Wohnzimmer.Licht.LEVEL') > 50 ? 10 : 80",
+			"description": "Helligkeit wechseln: Hell (>50%) → Dimm (10%), Dunkel → Hell (80%)"
+		}
+	],
+	"active": true,
+	"type": "recurring"
+}
+```
+
+#### Thermostat-Modus Toggle
+
+```json
+{
+	"cron": "0 6 * * 1-5",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Thermostat.SET_TEMPERATURE",
+			"type": "expression",
+			"value": "state('hm-rpc.0.Thermostat.SET_TEMPERATURE') === 21 ? 18 : 21",
+			"description": "Temperatur zwischen Komfort (21°C) und Eco (18°C) wechseln"
+		}
+	],
+	"active": true,
+	"type": "recurring"
+}
+```
+
+### Erweiterte Expression-Beispiele 🧠
+
+#### Wetterbasierte Heizungssteuerung
+
+```json
+{
+	"cron": "0 6 * * *",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Heizung.SET_TEMPERATURE",
+			"type": "expression",
+			"value": "state('weather.0.current.temperature') < 5 ? 22 : (state('weather.0.current.temperature') < 15 ? 20 : 18)",
+			"description": "Heizung: <5°C → 22°C, <15°C → 20°C, sonst 18°C"
+		}
+	],
+	"active": true,
+	"type": "recurring"
+}
+```
+
+#### Zeitbasierte Beleuchtung
+
+```json
+{
+	"cron": "*/30 * * * *",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Garten.Licht.STATE",
+			"type": "expression",
+			"value": "state('javascript.0.variables.isDark') && state('hm-rpc.0.Motion.DETECTED')",
+			"description": "Gartenlicht nur bei Dunkelheit UND Bewegung"
+		},
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.LEVEL",
+			"type": "expression",
+			"value": "Math.round(Math.max(20, 100 - (state('weather.0.current.brightness') / 10)))",
+			"description": "Helligkeit abhängig von Außenhelligkeit (20-100%)"
+		}
+	],
+	"active": true,
+	"type": "recurring"
+}
+```
+
+#### Multi-Sensor Logik
+
+```json
+{
+	"cron": "*/5 * * * *",
+	"targets": [
+		{
+			"id": "javascript.0.variables.autoMode",
+			"type": "expression",
+			"value": "state('sensor.temperature') > 25 && state('sensor.humidity') > 70 && state('weather.0.current.windSpeed') < 10",
+			"description": "Auto-Modus: Heiß UND feucht UND wenig Wind"
 		}
 	],
 	"active": true,
@@ -399,6 +561,8 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 - (kuen_je) Added job status monitoring and error handling
 - (kuen_je) Enhanced target configuration with type system (value, state, expression)
 - (kuen_je) Implemented state reference functionality for dynamic values
+- (kuen_je) Added powerful JavaScript expression engine with isolated-vm sandbox
+- (kuen_je) Implemented toggle functionality and complex logic support in expressions
 - (kuen_je) Added comprehensive admin interface with configuration options
 - (kuen_je) Improved event-driven architecture for better performance
 

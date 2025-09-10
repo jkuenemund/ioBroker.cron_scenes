@@ -67,6 +67,17 @@ class CronScenes extends utils.Adapter {
       },
       native: {}
     });
+    await this.setObjectNotExistsAsync("testVariable3", {
+      type: "state",
+      common: {
+        name: "testVariable3",
+        type: "number",
+        role: "value",
+        read: true,
+        write: true
+      },
+      native: {}
+    });
     this.subscribeStates("testVariable");
     this.setState("testVariable", { val: true, ack: false });
     this.setState("testVariable", { val: true, ack: true });
@@ -128,6 +139,12 @@ class CronScenes extends utils.Adapter {
             type: "state",
             value: "cron_scenes.0.testVariable",
             description: "Copy value from another state"
+          },
+          {
+            id: "cron_scenes.0.testVariable3",
+            type: "expression",
+            value: "state('cron_scenes.0.testVariable') ? Math.round(Math.random() * 100) : 0",
+            description: "Random number if testVariable is true, otherwise 0"
           }
         ],
         active: this.config.defaultJobsActive || false,
@@ -202,16 +219,6 @@ class CronScenes extends utils.Adapter {
       if (id.startsWith(cronFolder)) {
         this.cronJobManager.removeJob(id);
       }
-    }
-  }
-  /**
-   * Handle job configuration changes
-   */
-  async handleJobConfigChange(id, config) {
-    try {
-      await this.cronJobManager.addOrUpdateJob(id, config);
-    } catch (error) {
-      this.log.error(`Error updating job ${id}: ${error}`);
     }
   }
   // If you need to accept messages in your adapter, uncomment the following block and the corresponding line in the constructor.

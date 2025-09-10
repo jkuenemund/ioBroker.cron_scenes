@@ -1,3 +1,4 @@
+import * as ivm from "isolated-vm";
 import * as cron from "node-cron";
 
 /**
@@ -134,6 +135,9 @@ export class ConfigValidator {
 						CRON_ERROR_CODE.CONFIG_INVALID,
 					);
 				}
+
+				// Basic expression validation
+				ConfigValidator.validateExpression(target.value, jobId, index);
 			}
 
 			return {
@@ -163,8 +167,44 @@ export class ConfigValidator {
 			targets: validatedTargets,
 			active: config.active,
 			type: config.type,
-			error: config.error || null,
 		};
+	}
+
+	/**
+	 * Validate expression syntax and security
+	 */
+	public static validateExpression(expression: string, jobId: string, targetIndex: number): void {
+		// Check for valid state reference syntax
+		const stateReferences = expression.match(/state\(['"][^'"]+['"]\)/g) || [];
+		const stateReferencesSquare = expression.match(/state\[['"][^'"]+['"]\]/g) || [];
+
+		// Validate state IDs
+		[...stateReferences, ...stateReferencesSquare].forEach((ref) => {
+			const match = ref.match(/['"]([^'"]+)['"]/);
+			if (match) {
+				const stateId = match[1];
+				if (!stateId || stateId.length < 3) {
+					throw new CronJobError(
+						`Target ${targetIndex} expression contains invalid state reference: ${ref}`,
+						jobId,
+						CRON_ERROR_CODE.CONFIG_INVALID,
+					);
+				}
+			}
+		});
+
+		// Basic syntax check with isolated-vm (safe compilation test)
+		try {
+			const isolate = new ivm.Isolate({ memoryLimit: 8 }); // Minimum 8MB required
+			isolate.compileScriptSync(`(${expression})`);
+			isolate.dispose();
+		} catch (error) {
+			throw new CronJobError(
+				`Target ${targetIndex} expression has invalid JavaScript syntax: ${error instanceof Error ? error.message : String(error)}`,
+				jobId,
+				CRON_ERROR_CODE.CONFIG_INVALID,
+			);
+		}
 	}
 }
 
@@ -186,7 +226,6 @@ export interface CronJobConfig {
 	targets: CronTarget[];
 	active: boolean;
 	type: CronJobTypeType;
-	error?: string | null;
 }
 
 /**
@@ -238,7 +277,6 @@ interface RegisteredCronJob {
 export class CronJobManager {
 	private adapter: AdapterInterface;
 	private jobs: Map<string, RegisteredCronJob> = new Map();
-	private checkInterval?: NodeJS.Timeout;
 
 	constructor(adapter: AdapterInterface) {
 		this.adapter = adapter;
@@ -590,11 +628,8 @@ export class CronJobManager {
 				return await this.resolveStateReference(target.value as string, target.id);
 
 			case CRON_TARGET_TYPE.EXPRESSION:
-				// Expression - evaluate (future implementation)
-				this.adapter.log.warn(
-					`CronJobManager: Expression type not yet implemented for target ${target.id}, using direct value`,
-				);
-				return target.value;
+				// Expression - evaluate JavaScript expression
+				return await this.resolveExpression(target.value as string, target.id);
 
 			default:
 				this.adapter.log.warn(
@@ -629,6 +664,140 @@ export class CronJobManager {
 			}
 			throw new CronJobError(
 				`Error resolving state reference '${stateId}': ${error instanceof Error ? error.message : String(error)}`,
+				targetId,
+				CRON_ERROR_CODE.EXECUTION_FAILED,
+				error instanceof Error ? error : undefined,
+			);
+		}
+	}
+
+	/**
+	 * Resolve JavaScript expression with secure sandbox
+	 */
+	private async resolveExpression(expression: string, targetId: string): Promise<string | number | boolean | null> {
+		try {
+			if (!expression || typeof expression !== "string") {
+				throw new CronJobError(`Invalid expression: ${expression}`, targetId, CRON_ERROR_CODE.CONFIG_INVALID);
+			}
+
+			this.adapter.log.debug(`CronJobManager: Evaluating expression '${expression}' for target ${targetId}`);
+
+			// Build context with state references
+			const context = await this.buildExpressionContext(expression, targetId);
+
+			// Evaluate expression in sandbox
+			const result = await this.evaluateInSandbox(expression, context, targetId);
+
+			this.adapter.log.debug(
+				`CronJobManager: Expression '${expression}' evaluated to ${result} for target ${targetId}`,
+			);
+			return result;
+		} catch (error) {
+			if (error instanceof CronJobError) {
+				throw error;
+			}
+			throw new CronJobError(
+				`Error evaluating expression '${expression}': ${error instanceof Error ? error.message : String(error)}`,
+				targetId,
+				CRON_ERROR_CODE.EXECUTION_FAILED,
+				error instanceof Error ? error : undefined,
+			);
+		}
+	}
+
+	/**
+	 * Build context for expression evaluation by resolving state references
+	 */
+	private async buildExpressionContext(expression: string, targetId: string): Promise<Record<string, any>> {
+		const context: Record<string, any> = {};
+
+		// Find state references in expression (pattern: state['id'] or state("id"))
+		const statePatterns = [
+			/state\(['"]([^'"]+)['"]\)/g, // state('id') or state("id")
+			/state\[['"]([^'"]+)['"]\]/g, // state['id'] or state["id"]
+		];
+
+		for (const pattern of statePatterns) {
+			let match;
+			while ((match = pattern.exec(expression)) !== null) {
+				const stateId = match[1];
+				if (!context[`state_${stateId.replace(/[^a-zA-Z0-9_]/g, "_")}`]) {
+					try {
+						const state = await this.adapter.getStateAsync(stateId);
+						const safeName = `state_${stateId.replace(/[^a-zA-Z0-9_]/g, "_")}`;
+						context[safeName] = state ? state.val : null;
+						this.adapter.log.debug(
+							`CronJobManager: Added state '${stateId}' = ${context[safeName]} to expression context`,
+						);
+					} catch (error) {
+						this.adapter.log.warn(
+							`CronJobManager: Could not resolve state '${stateId}' for expression: ${error}`,
+						);
+						context[`state_${stateId.replace(/[^a-zA-Z0-9_]/g, "_")}`] = null;
+					}
+				}
+			}
+		}
+
+		// Add current timestamp (isolated-vm has built-in Math and Date objects)
+		context.now = Date.now();
+
+		return context;
+	}
+
+	/**
+	 * Evaluate expression in isolated-vm sandbox
+	 */
+	private async evaluateInSandbox(expression: string, context: Record<string, any>, targetId: string): Promise<any> {
+		try {
+			// Replace state references with context variables
+			let processedExpression = expression;
+
+			// Replace both state('id') and state['id'] with context variables
+			processedExpression = processedExpression.replace(
+				/state\((['"])([^'"]+)\1\)|state\[(['"])([^'"]+)\3\]/g,
+				(match, quote1, stateId1, quote2, stateId2) => {
+					const stateId = stateId1 || stateId2;
+					return `state_${stateId.replace(/[^a-zA-Z0-9_]/g, "_")}`;
+				},
+			);
+
+			this.adapter.log.debug(`CronJobManager: Processed expression: ${processedExpression}`);
+
+			// Create isolated VM instance
+			const isolate = new ivm.Isolate({ memoryLimit: 8 }); // 8MB memory limit
+			const ivmContext = await isolate.createContext();
+			const jail = ivmContext.global;
+
+			// Set up safe context in isolated VM
+			await jail.set("global", jail.derefInto());
+
+			// Add context variables to jail (state values and primitives only)
+			for (const [key, value] of Object.entries(context)) {
+				if (key !== "Math" && key !== "Date") {
+					// Only handle primitives (numbers, strings, booleans, null)
+					if (
+						typeof value === "number" ||
+						typeof value === "string" ||
+						typeof value === "boolean" ||
+						value === null
+					) {
+						await jail.set(key, value);
+					}
+				}
+			}
+
+			// Execute expression with timeout
+			const script = await isolate.compileScript(`(${processedExpression})`);
+			const result = await script.run(ivmContext, { timeout: 5000 }); // 5 second timeout
+
+			// Clean up
+			isolate.dispose();
+
+			return result;
+		} catch (error) {
+			throw new CronJobError(
+				`Expression sandbox execution failed: ${error instanceof Error ? error.message : String(error)}`,
 				targetId,
 				CRON_ERROR_CODE.EXECUTION_FAILED,
 				error instanceof Error ? error : undefined,
