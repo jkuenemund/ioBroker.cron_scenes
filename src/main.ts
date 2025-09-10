@@ -40,6 +40,7 @@ class CronScenes extends utils.Adapter {
 		this.log.info("config defaultJobsActive: " + this.config.defaultJobsActive);
 		this.log.info("config maxConcurrentJobs: " + this.config.maxConcurrentJobs);
 		this.log.info("config jobTimeout: " + this.config.jobTimeout);
+		this.log.info("config vmMemoryLimit: " + this.config.vmMemoryLimit);
 
 		/*
 		For every state in the system there has to be also an object of type state

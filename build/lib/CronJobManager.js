@@ -201,6 +201,27 @@ class CronJobManager {
     this.adapter = adapter;
   }
   /**
+   * Get configured VM memory limit with validation
+   */
+  getVmMemoryLimit() {
+    const configuredLimit = this.adapter.config.vmMemoryLimit || 8;
+    const minLimit = 8;
+    const maxLimit = 128;
+    if (configuredLimit < minLimit) {
+      this.adapter.log.warn(
+        `CronJobManager: VM memory limit ${configuredLimit}MB is below minimum ${minLimit}MB, using ${minLimit}MB`
+      );
+      return minLimit;
+    }
+    if (configuredLimit > maxLimit) {
+      this.adapter.log.warn(
+        `CronJobManager: VM memory limit ${configuredLimit}MB exceeds maximum ${maxLimit}MB, using ${maxLimit}MB`
+      );
+      return maxLimit;
+    }
+    return configuredLimit;
+  }
+  /**
    * Initialize the cron job manager
    */
   initialize() {
@@ -575,7 +596,8 @@ class CronJobManager {
         }
       );
       this.adapter.log.debug(`CronJobManager: Processed expression: ${processedExpression}`);
-      const isolate = new ivm.Isolate({ memoryLimit: 8 });
+      const memoryLimit = this.getVmMemoryLimit();
+      const isolate = new ivm.Isolate({ memoryLimit });
       const ivmContext = await isolate.createContext();
       const jail = ivmContext.global;
       await jail.set("global", jail.derefInto());

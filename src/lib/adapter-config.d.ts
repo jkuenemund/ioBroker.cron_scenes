@@ -14,6 +14,8 @@ declare global {
 			maxConcurrentJobs: number;
 			// Job timeout in seconds
 			jobTimeout: number;
+			// Memory limit for expression VM in MB
+			vmMemoryLimit: number;
 		}
 	}
 }

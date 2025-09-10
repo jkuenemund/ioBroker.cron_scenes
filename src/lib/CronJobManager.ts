@@ -195,7 +195,7 @@ export class ConfigValidator {
 
 		// Basic syntax check with isolated-vm (safe compilation test)
 		try {
-			const isolate = new ivm.Isolate({ memoryLimit: 8 }); // Minimum 8MB required
+			const isolate = new ivm.Isolate({ memoryLimit: 8 }); // Use minimum for validation
 			isolate.compileScriptSync(`(${expression})`);
 			isolate.dispose();
 		} catch (error) {
@@ -249,6 +249,7 @@ export interface AdapterInterface {
 		defaultJobsActive?: boolean;
 		maxConcurrentJobs?: number;
 		jobTimeout?: number;
+		vmMemoryLimit?: number;
 	};
 	namespace: string;
 	setState(id: string, state: ioBroker.SettableState): void;
@@ -280,6 +281,31 @@ export class CronJobManager {
 
 	constructor(adapter: AdapterInterface) {
 		this.adapter = adapter;
+	}
+
+	/**
+	 * Get configured VM memory limit with validation
+	 */
+	private getVmMemoryLimit(): number {
+		const configuredLimit = this.adapter.config.vmMemoryLimit || 8; // Default 8MB
+		const minLimit = 8; // isolated-vm minimum requirement
+		const maxLimit = 128; // Reasonable maximum for safety
+
+		if (configuredLimit < minLimit) {
+			this.adapter.log.warn(
+				`CronJobManager: VM memory limit ${configuredLimit}MB is below minimum ${minLimit}MB, using ${minLimit}MB`,
+			);
+			return minLimit;
+		}
+
+		if (configuredLimit > maxLimit) {
+			this.adapter.log.warn(
+				`CronJobManager: VM memory limit ${configuredLimit}MB exceeds maximum ${maxLimit}MB, using ${maxLimit}MB`,
+			);
+			return maxLimit;
+		}
+
+		return configuredLimit;
 	}
 
 	/**
@@ -764,8 +790,9 @@ export class CronJobManager {
 
 			this.adapter.log.debug(`CronJobManager: Processed expression: ${processedExpression}`);
 
-			// Create isolated VM instance
-			const isolate = new ivm.Isolate({ memoryLimit: 8 }); // 8MB memory limit
+			// Create isolated VM instance with configurable memory limit
+			const memoryLimit = this.getVmMemoryLimit();
+			const isolate = new ivm.Isolate({ memoryLimit });
 			const ivmContext = await isolate.createContext();
 			const jail = ivmContext.global;
 
