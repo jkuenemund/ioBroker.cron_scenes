@@ -68,24 +68,92 @@ class CronScenes extends utils.Adapter {
 			you will notice that each setState will cause the stateChange event to fire (because of above subscribeStates cmd)
 		*/
 		// the variable testVariable is set to true as command (ack=false)
-		await this.setStateAsync("testVariable", true);
+		this.setState("testVariable", { val: true, ack: false });
 
 		// same thing, but the value is flagged "ack"
 		// ack should be always set to true if the value is received from or acknowledged from the target system
-		await this.setStateAsync("testVariable", { val: true, ack: true });
+		this.setState("testVariable", { val: true, ack: true });
 
 		// same thing, but the state is deleted after 30s (getState will return null afterwards)
-		await this.setStateAsync("testVariable", { val: true, ack: true, expire: 30 });
+		this.setState("testVariable", { val: true, ack: true, expire: 30 });
 
 		// Initialize cron scenes adapter
 		this.log.info("Cron Scenes adapter started successfully");
+
+		// Create jobs folder structure
+		const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
+		await this.createJobsFolder(cronFolder);
 
 		// Start CronJobManager
 		this.cronJobManager.initialize();
 
 		// Subscribe to job states in the configured folder
-		const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
 		this.subscribeStates(`${cronFolder}.*`);
+	}
+
+	/**
+	 * Create jobs folder structure
+	 */
+	private async createJobsFolder(cronFolder: string): Promise<void> {
+		try {
+			// Create the main jobs folder
+			await this.setObjectNotExistsAsync(cronFolder, {
+				type: "folder",
+				common: {
+					name: "Cron Jobs",
+					desc: "Folder containing all cron job configurations",
+				},
+				native: {},
+			});
+
+			// Create an example job to demonstrate the structure
+			const exampleJobId = `${cronFolder}.example`;
+			await this.setObjectNotExistsAsync(exampleJobId, {
+				type: "state",
+				common: {
+					name: "Example Cron Job",
+					type: "string",
+					role: "json",
+					read: true,
+					write: true,
+					desc: "Example cron job configuration - you can copy and modify this",
+				},
+				native: {
+					cron: "* * * * *",
+					targets: [
+						{
+							id: "cron_scenes.0.testVariable",
+							value: true,
+						},
+					],
+					active: false,
+					type: "recurring",
+				},
+			});
+
+			// Set example configuration as state value
+			const exampleConfig = {
+				cron: "* * * * *",
+				targets: [
+					{
+						id: "cron_scenes.0.testVariable",
+						value: true,
+					},
+				],
+				active: false,
+				type: "recurring",
+			};
+
+			this.setState(exampleJobId, {
+				val: JSON.stringify(exampleConfig, null, 2),
+				ack: true,
+			});
+
+			this.log.info(`Jobs folder created at: ${cronFolder}`);
+			this.log.info(`Example job created at: ${exampleJobId}`);
+		} catch (error) {
+			this.log.error(`Error creating jobs folder: ${error}`);
+		}
 	}
 
 	/**
@@ -148,7 +216,7 @@ class CronScenes extends utils.Adapter {
 				});
 
 				// Reset trigger state
-				this.setStateAsync(id, false, true);
+				this.setState(id, { val: false, ack: true });
 			}
 
 			// Skip processing status states as job changes

@@ -175,6 +175,9 @@ export class CronJobManager {
 	 * Manually trigger a job
 	 */
 	public async triggerJob(jobId: string): Promise<void> {
+		// Before triggering, ensure we have the latest configuration
+		await this.refreshJobConfig(jobId);
+
 		const job = this.jobs.get(jobId);
 		if (!job) {
 			throw new Error(`Job ${jobId} not found`);
@@ -182,6 +185,62 @@ export class CronJobManager {
 
 		this.adapter.log.info(`CronJobManager: Manually triggering job ${jobId}`);
 		await this.executeJob(jobId);
+	}
+
+	/**
+	 * Refresh job configuration from current state
+	 */
+	private async refreshJobConfig(jobId: string): Promise<void> {
+		try {
+			// Get current state value
+			const state = await this.adapter.getStateAsync(jobId);
+			const obj = await this.adapter.getObjectAsync(jobId);
+
+			if (!state || !obj) {
+				this.adapter.log.warn(
+					`CronJobManager: Could not refresh config for job ${jobId} - state or object not found`,
+				);
+				return;
+			}
+
+			let config: CronJobConfig;
+
+			// Try to get config from state value first, then from native as fallback
+			if ((state as any).val && typeof (state as any).val === "string") {
+				try {
+					config = JSON.parse((state as any).val) as CronJobConfig;
+					this.adapter.log.debug(`CronJobManager: Refreshed config from state value for job ${jobId}`);
+				} catch (error) {
+					this.adapter.log.error(`CronJobManager: Error parsing job config from state ${jobId}: ${error}`);
+					return;
+				}
+			} else if (obj.native && (obj.native as any).cron) {
+				config = obj.native as CronJobConfig;
+				this.adapter.log.debug(`CronJobManager: Refreshed config from native object for job ${jobId}`);
+			} else {
+				this.adapter.log.debug(`CronJobManager: No valid config found for job ${jobId} during refresh`);
+				return;
+			}
+
+			// Validate config
+			if (!config.cron || !config.targets) {
+				this.adapter.log.error(
+					`CronJobManager: Invalid refreshed config for job ${jobId}: missing cron or targets`,
+				);
+				return;
+			}
+
+			// Check if job needs to be updated
+			const existingJob = this.jobs.get(jobId);
+			if (existingJob && JSON.stringify(existingJob.config) !== JSON.stringify(config)) {
+				this.adapter.log.info(`CronJobManager: Config changed during refresh for job ${jobId}, updating job`);
+				// Remove existing job completely before adding the new one
+				this.removeJob(jobId);
+				await this.addOrUpdateJob(jobId, config);
+			}
+		} catch (error) {
+			this.adapter.log.error(`CronJobManager: Error refreshing job config for ${jobId}: ${error}`);
+		}
 	}
 
 	/**
@@ -199,7 +258,9 @@ export class CronJobManager {
 
 		try {
 			// Execute all targets
+			this.adapter.log.debug(`CronJobManager: Job ${jobId} has ${job.config.targets.length} targets to execute`);
 			for (const target of job.config.targets) {
+				this.adapter.log.debug(`CronJobManager: Executing target ${target.id} with value ${target.value}`);
 				await this.executeTarget(target);
 			}
 
@@ -356,18 +417,20 @@ export class CronJobManager {
 
 				let config: CronJobConfig;
 
-				// Try to get config from native first, then from state value
-				if (obj.native && (obj.native as any).cron) {
-					config = obj.native as CronJobConfig;
-				} else if ((state as any).val && typeof (state as any).val === "string") {
+				// Try to get config from state value first, then from native as fallback
+				if ((state as any).val && typeof (state as any).val === "string") {
 					try {
 						config = JSON.parse((state as any).val) as CronJobConfig;
+						this.adapter.log.debug(`CronJobManager: Using config from state value for job ${jobId}`);
 					} catch (error) {
 						this.adapter.log.error(
 							`CronJobManager: Error parsing job config from state ${jobId}: ${error}`,
 						);
 						continue;
 					}
+				} else if (obj.native && (obj.native as any).cron) {
+					config = obj.native as CronJobConfig;
+					this.adapter.log.debug(`CronJobManager: Using config from native object for job ${jobId}`);
 				} else {
 					this.adapter.log.debug(`CronJobManager: No valid config found for job ${jobId}`);
 					continue;
@@ -382,6 +445,14 @@ export class CronJobManager {
 				// Check if job needs to be updated
 				const existingJob = this.jobs.get(jobId);
 				if (!existingJob || JSON.stringify(existingJob.config) !== JSON.stringify(config)) {
+					// Remove existing job completely before adding the new one
+					if (existingJob) {
+						this.adapter.log.info(
+							`CronJobManager: Configuration changed for job ${jobId}, removing old job`,
+						);
+						this.removeJob(jobId);
+					}
+					this.adapter.log.info(`CronJobManager: Adding job ${jobId} with new configuration`);
 					await this.addOrUpdateJob(jobId, config);
 				}
 			}

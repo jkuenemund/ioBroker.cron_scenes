@@ -139,12 +139,58 @@ class CronJobManager {
    * Manually trigger a job
    */
   async triggerJob(jobId) {
+    await this.refreshJobConfig(jobId);
     const job = this.jobs.get(jobId);
     if (!job) {
       throw new Error(`Job ${jobId} not found`);
     }
     this.adapter.log.info(`CronJobManager: Manually triggering job ${jobId}`);
     await this.executeJob(jobId);
+  }
+  /**
+   * Refresh job configuration from current state
+   */
+  async refreshJobConfig(jobId) {
+    try {
+      const state = await this.adapter.getStateAsync(jobId);
+      const obj = await this.adapter.getObjectAsync(jobId);
+      if (!state || !obj) {
+        this.adapter.log.warn(
+          `CronJobManager: Could not refresh config for job ${jobId} - state or object not found`
+        );
+        return;
+      }
+      let config;
+      if (state.val && typeof state.val === "string") {
+        try {
+          config = JSON.parse(state.val);
+          this.adapter.log.debug(`CronJobManager: Refreshed config from state value for job ${jobId}`);
+        } catch (error) {
+          this.adapter.log.error(`CronJobManager: Error parsing job config from state ${jobId}: ${error}`);
+          return;
+        }
+      } else if (obj.native && obj.native.cron) {
+        config = obj.native;
+        this.adapter.log.debug(`CronJobManager: Refreshed config from native object for job ${jobId}`);
+      } else {
+        this.adapter.log.debug(`CronJobManager: No valid config found for job ${jobId} during refresh`);
+        return;
+      }
+      if (!config.cron || !config.targets) {
+        this.adapter.log.error(
+          `CronJobManager: Invalid refreshed config for job ${jobId}: missing cron or targets`
+        );
+        return;
+      }
+      const existingJob = this.jobs.get(jobId);
+      if (existingJob && JSON.stringify(existingJob.config) !== JSON.stringify(config)) {
+        this.adapter.log.info(`CronJobManager: Config changed during refresh for job ${jobId}, updating job`);
+        this.removeJob(jobId);
+        await this.addOrUpdateJob(jobId, config);
+      }
+    } catch (error) {
+      this.adapter.log.error(`CronJobManager: Error refreshing job config for ${jobId}: ${error}`);
+    }
   }
   /**
    * Execute a cron job
@@ -158,7 +204,9 @@ class CronJobManager {
     const startTime = (/* @__PURE__ */ new Date()).toISOString();
     this.adapter.log.info(`CronJobManager: Executing job ${jobId}`);
     try {
+      this.adapter.log.debug(`CronJobManager: Job ${jobId} has ${job.config.targets.length} targets to execute`);
       for (const target of job.config.targets) {
+        this.adapter.log.debug(`CronJobManager: Executing target ${target.id} with value ${target.value}`);
         await this.executeTarget(target);
       }
       const status = {
@@ -273,17 +321,19 @@ class CronJobManager {
         const obj = await this.adapter.getObjectAsync(jobId);
         if (!obj) continue;
         let config;
-        if (obj.native && obj.native.cron) {
-          config = obj.native;
-        } else if (state.val && typeof state.val === "string") {
+        if (state.val && typeof state.val === "string") {
           try {
             config = JSON.parse(state.val);
+            this.adapter.log.debug(`CronJobManager: Using config from state value for job ${jobId}`);
           } catch (error) {
             this.adapter.log.error(
               `CronJobManager: Error parsing job config from state ${jobId}: ${error}`
             );
             continue;
           }
+        } else if (obj.native && obj.native.cron) {
+          config = obj.native;
+          this.adapter.log.debug(`CronJobManager: Using config from native object for job ${jobId}`);
         } else {
           this.adapter.log.debug(`CronJobManager: No valid config found for job ${jobId}`);
           continue;
@@ -294,6 +344,13 @@ class CronJobManager {
         }
         const existingJob = this.jobs.get(jobId);
         if (!existingJob || JSON.stringify(existingJob.config) !== JSON.stringify(config)) {
+          if (existingJob) {
+            this.adapter.log.info(
+              `CronJobManager: Configuration changed for job ${jobId}, removing old job`
+            );
+            this.removeJob(jobId);
+          }
+          this.adapter.log.info(`CronJobManager: Adding job ${jobId} with new configuration`);
           await this.addOrUpdateJob(jobId, config);
         }
       }

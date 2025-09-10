@@ -55,13 +55,71 @@ class CronScenes extends utils.Adapter {
       native: {}
     });
     this.subscribeStates("testVariable");
-    await this.setStateAsync("testVariable", true);
-    await this.setStateAsync("testVariable", { val: true, ack: true });
-    await this.setStateAsync("testVariable", { val: true, ack: true, expire: 30 });
+    this.setState("testVariable", { val: true, ack: false });
+    this.setState("testVariable", { val: true, ack: true });
+    this.setState("testVariable", { val: true, ack: true, expire: 30 });
     this.log.info("Cron Scenes adapter started successfully");
-    this.cronJobManager.initialize();
     const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
+    await this.createJobsFolder(cronFolder);
+    this.cronJobManager.initialize();
     this.subscribeStates(`${cronFolder}.*`);
+  }
+  /**
+   * Create jobs folder structure
+   */
+  async createJobsFolder(cronFolder) {
+    try {
+      await this.setObjectNotExistsAsync(cronFolder, {
+        type: "folder",
+        common: {
+          name: "Cron Jobs",
+          desc: "Folder containing all cron job configurations"
+        },
+        native: {}
+      });
+      const exampleJobId = `${cronFolder}.example`;
+      await this.setObjectNotExistsAsync(exampleJobId, {
+        type: "state",
+        common: {
+          name: "Example Cron Job",
+          type: "string",
+          role: "json",
+          read: true,
+          write: true,
+          desc: "Example cron job configuration - you can copy and modify this"
+        },
+        native: {
+          cron: "* * * * *",
+          targets: [
+            {
+              id: "cron_scenes.0.testVariable",
+              value: true
+            }
+          ],
+          active: false,
+          type: "recurring"
+        }
+      });
+      const exampleConfig = {
+        cron: "* * * * *",
+        targets: [
+          {
+            id: "cron_scenes.0.testVariable",
+            value: true
+          }
+        ],
+        active: false,
+        type: "recurring"
+      };
+      this.setState(exampleJobId, {
+        val: JSON.stringify(exampleConfig, null, 2),
+        ack: true
+      });
+      this.log.info(`Jobs folder created at: ${cronFolder}`);
+      this.log.info(`Example job created at: ${exampleJobId}`);
+    } catch (error) {
+      this.log.error(`Error creating jobs folder: ${error}`);
+    }
   }
   /**
    * Is called when adapter shuts down - callback has to be called under any circumstances!
@@ -104,7 +162,7 @@ class CronScenes extends utils.Adapter {
         this.cronJobManager.triggerJob(jobId).catch((error) => {
           this.log.error(`Error triggering job ${jobId}: ${error}`);
         });
-        this.setStateAsync(id, false, true);
+        this.setState(id, { val: false, ack: true });
       }
       if (id.endsWith(".status")) {
         return;
