@@ -36,8 +36,10 @@ class CronScenes extends utils.Adapter {
 		// The adapters config (in the instance object everything under the attribute "native") is accessible via
 		// this.config:
 		this.log.info("config cronFolder: " + this.config.cronFolder);
-		this.log.info("config checkInterval: " + this.config.checkInterval);
 		this.log.info("config enableLogging: " + this.config.enableLogging);
+		this.log.info("config defaultJobsActive: " + this.config.defaultJobsActive);
+		this.log.info("config maxConcurrentJobs: " + this.config.maxConcurrentJobs);
+		this.log.info("config jobTimeout: " + this.config.jobTimeout);
 
 		/*
 		For every state in the system there has to be also an object of type state
@@ -126,7 +128,7 @@ class CronScenes extends utils.Adapter {
 							value: true,
 						},
 					],
-					active: false,
+					active: this.config.defaultJobsActive || false,
 					type: CRON_JOB_TYPE.RECURRING,
 				},
 			});
@@ -140,7 +142,7 @@ class CronScenes extends utils.Adapter {
 						value: true,
 					},
 				],
-				active: false,
+				active: this.config.defaultJobsActive || false,
 				type: CRON_JOB_TYPE.RECURRING,
 			};
 

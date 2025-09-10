@@ -41,8 +41,10 @@ class CronScenes extends utils.Adapter {
    */
   async onReady() {
     this.log.info("config cronFolder: " + this.config.cronFolder);
-    this.log.info("config checkInterval: " + this.config.checkInterval);
     this.log.info("config enableLogging: " + this.config.enableLogging);
+    this.log.info("config defaultJobsActive: " + this.config.defaultJobsActive);
+    this.log.info("config maxConcurrentJobs: " + this.config.maxConcurrentJobs);
+    this.log.info("config jobTimeout: " + this.config.jobTimeout);
     await this.setObjectNotExistsAsync("testVariable", {
       type: "state",
       common: {
@@ -96,7 +98,7 @@ class CronScenes extends utils.Adapter {
               value: true
             }
           ],
-          active: false,
+          active: this.config.defaultJobsActive || false,
           type: import_CronJobManager.CRON_JOB_TYPE.RECURRING
         }
       });
@@ -108,7 +110,7 @@ class CronScenes extends utils.Adapter {
             value: true
           }
         ],
-        active: false,
+        active: this.config.defaultJobsActive || false,
         type: import_CronJobManager.CRON_JOB_TYPE.RECURRING
       };
       this.setState(exampleJobId, {

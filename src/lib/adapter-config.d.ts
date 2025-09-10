@@ -6,10 +6,14 @@ declare global {
 		interface AdapterConfig {
 			// Folder to monitor for cron job states
 			cronFolder: string;
-			// Interval in seconds to check for new/changed cron jobs
-			checkInterval: number;
 			// Enable detailed logging
 			enableLogging: boolean;
+			// New jobs are active by default
+			defaultJobsActive: boolean;
+			// Maximum number of concurrent jobs
+			maxConcurrentJobs: number;
+			// Job timeout in seconds
+			jobTimeout: number;
 		}
 	}
 }

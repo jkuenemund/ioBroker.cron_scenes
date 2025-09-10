@@ -1,95 +1,127 @@
 <html>
+	<head>
+		<!-- Load ioBroker scripts and styles-->
+		<link rel="stylesheet" type="text/css" href="../../css/adapter.css" />
+		<link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css" />
 
-<head>
+		<script type="text/javascript" src="../../lib/js/jquery-3.2.1.min.js"></script>
+		<script type="text/javascript" src="../../socket.io/socket.io.js"></script>
 
-	<!-- Load ioBroker scripts and styles-->
-	<link rel="stylesheet" type="text/css" href="../../css/adapter.css" />
-	<link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css">
+		<script type="text/javascript" src="../../js/translate.js"></script>
+		<script type="text/javascript" src="../../lib/js/materialize.js"></script>
+		<script type="text/javascript" src="../../js/adapter-settings.js"></script>
 
-	<script type="text/javascript" src="../../lib/js/jquery-3.2.1.min.js"></script>
-	<script type="text/javascript" src="../../socket.io/socket.io.js"></script>
+		<!-- Load our own files -->
+		<link rel="stylesheet" type="text/css" href="style.css" />
+		<script type="text/javascript" src="words.js"></script>
 
-	<script type="text/javascript" src="../../js/translate.js"></script>
-	<script type="text/javascript" src="../../lib/js/materialize.js"></script>
-	<script type="text/javascript" src="../../js/adapter-settings.js"></script>
+		<script type="text/javascript">
+			// This will be called by the admin adapter when the settings page loads
+			function load(settings, onChange) {
+				// example: select elements with id=key and class=value and insert value
+				if (!settings) return;
+				$(".value").each(function () {
+					var $key = $(this);
+					var id = $key.attr("id");
+					if ($key.attr("type") === "checkbox") {
+						// do not call onChange direct, because onChange could expect some arguments
+						$key.prop("checked", settings[id]).on("change", () => onChange());
+					} else {
+						// do not call onChange direct, because onChange could expect some arguments
+						$key.val(settings[id])
+							.on("change", () => onChange())
+							.on("keyup", () => onChange());
+					}
+				});
+				onChange(false);
+				// reinitialize all the Materialize labels on the page if you are dynamically adding inputs:
+				if (M) M.updateTextFields();
+			}
 
-	<!-- Load our own files -->
-	<link rel="stylesheet" type="text/css" href="style.css" />
-	<script type="text/javascript" src="words.js"></script>
+			// This will be called by the admin adapter when the user presses the save button
+			function save(callback) {
+				// example: select elements with class=value and build settings object
+				var obj = {};
+				$(".value").each(function () {
+					var $this = $(this);
+					if ($this.attr("type") === "checkbox") {
+						obj[$this.attr("id")] = $this.prop("checked");
+					} else if ($this.attr("type") === "number") {
+						obj[$this.attr("id")] = parseFloat($this.val());
+					} else {
+						obj[$this.attr("id")] = $this.val();
+					}
+				});
+				callback(obj);
+			}
+		</script>
+	</head>
 
-	<script type="text/javascript">
-		// This will be called by the admin adapter when the settings page loads
-		function load(settings, onChange) {
-			// example: select elements with id=key and class=value and insert value
-			if (!settings) return;
-			$('.value').each(function () {
-				var $key = $(this);
-				var id = $key.attr('id');
-				if ($key.attr('type') === 'checkbox') {
-					// do not call onChange direct, because onChange could expect some arguments
-					$key.prop('checked', settings[id])
-						.on('change', () => onChange())
-						;
-				} else {
-					// do not call onChange direct, because onChange could expect some arguments
-					$key.val(settings[id])
-						.on('change', () => onChange())
-						.on('keyup', () => onChange())
-						;
-				}
-			});
-			onChange(false);
-			// reinitialize all the Materialize labels on the page if you are dynamically adding inputs:
-			if (M) M.updateTextFields();
-		}
+	<body>
+		<div class="m adapter-container">
+			<div class="row">
+				<div class="col s12 m4 l2">
+					<img src="cron_scenes.png" class="logo" />
+				</div>
+			</div>
 
-		// This will be called by the admin adapter when the user presses the save button
-		function save(callback) {
-			// example: select elements with class=value and build settings object
-			var obj = {};
-			$('.value').each(function () {
-				var $this = $(this);
-				if ($this.attr('type') === 'checkbox') {
-					obj[$this.attr('id')] = $this.prop('checked');
-				} else if ($this.attr('type') === 'number') {
-					obj[$this.attr('id')] = parseFloat($this.val());
-				} else {
-					obj[$this.attr('id')] = $this.val();
-				}
-			});
-			callback(obj);
-		}
-	</script>
+			<!-- Cron Scenes Configuration -->
 
-</head>
+			<div class="row">
+				<div class="col s12">
+					<h5 class="translate">general_settings</h5>
+				</div>
+			</div>
 
-<body>
+			<div class="row">
+				<div class="col s12 m6 input-field">
+					<input type="text" class="value" id="cronFolder" placeholder="cron_scenes.0.jobs" />
+					<label for="cronFolder" class="translate">cronFolder</label>
+					<span class="helper-text translate">cronFolder_help</span>
+				</div>
 
-	<div class="m adapter-container">
+				<div class="col s12 m6 input-field">
+					<input type="checkbox" class="value" id="enableLogging" />
+					<label for="enableLogging" class="translate">enableLogging</label>
+					<span class="helper-text translate">enableLogging_help</span>
+				</div>
+			</div>
 
-		<div class="row">
-			<div class="col s12 m4 l2">
-				<img src="cron_scenes.png" class="logo">
+			<div class="row">
+				<div class="col s12">
+					<h5 class="translate">job_settings</h5>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col s12 m6 input-field">
+					<input type="checkbox" class="value" id="defaultJobsActive" />
+					<label for="defaultJobsActive" class="translate">defaultJobsActive</label>
+					<span class="helper-text translate">defaultJobsActive_help</span>
+				</div>
+
+				<div class="col s12 m6 input-field">
+					<input
+						type="number"
+						class="value"
+						id="maxConcurrentJobs"
+						min="1"
+						max="50"
+						value="5"
+						placeholder="5"
+					/>
+					<label for="maxConcurrentJobs" class="translate">maxConcurrentJobs</label>
+					<span class="helper-text translate">maxConcurrentJobs_help</span>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col s12 m6 input-field">
+					<input type="number" class="value" id="jobTimeout" min="5" max="300" value="30" placeholder="30" />
+					<label for="jobTimeout" class="translate">jobTimeout</label>
+					<span class="helper-text translate">jobTimeout_help</span>
+				</div>
 			</div>
 		</div>
-
-		<!-- Put your content here -->
-
-		<!-- For example columns with settings: -->
-		<div class="row">
-			<div class="col s6 input-field">
-				<input type="checkbox" class="value" id="option1" />
-				<label for="option1" class="translate">option1</label>
-			</div>
-
-			<div class="col s6 input-field">
-				<input type="text" class="value" id="option2" />
-				<label for="option2" class="translate">option2</label>
-			</div>
-		</div>
-
-	</div>
-
-</body>
-
+	</body>
 </html>

@@ -166,8 +166,10 @@ export interface AdapterInterface {
 	log: ioBroker.Logger;
 	config: {
 		cronFolder?: string;
-		checkInterval?: number;
 		enableLogging?: boolean;
+		defaultJobsActive?: boolean;
+		maxConcurrentJobs?: number;
+		jobTimeout?: number;
 	};
 	namespace: string;
 	setState(id: string, state: ioBroker.SettableState): void;
