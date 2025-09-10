@@ -83,6 +83,60 @@ Hier werden alle Ihre Cron-Jobs gespeichert. Ein Beispiel-Job wird automatisch e
 
 #### Target-Konfiguration
 
+Jedes Target hat folgende Eigenschaften:
+
+| Parameter     | Typ    | Beschreibung                                    | Beispiel                             |
+| ------------- | ------ | ----------------------------------------------- | ------------------------------------ |
+| `id`          | string | Die ioBroker State-ID, die gesetzt werden soll  | `"hm-rpc.0.Licht.STATE"`             |
+| `type`        | string | Art des Target-Werts (optional)                 | `"value"`, `"state"`, `"expression"` |
+| `value`       | any    | Der Wert oder die Referenz, abhängig vom `type` | `true`, `"weather.0.temp"`           |
+| `description` | string | Optionale Beschreibung des Targets              | `"Wohnzimmer Licht"`                 |
+
+#### Target-Types im Detail
+
+##### 🎯 Type: `"value"` (Standard)
+
+Setzt einen direkten Wert - rückwärtskompatibel mit bestehenden Jobs:
+
+```json
+{
+	"id": "hm-rpc.0.Licht.STATE",
+	"type": "value", // optional, ist Standard
+	"value": true,
+	"description": "Licht einschalten"
+}
+```
+
+##### 🔗 Type: `"state"` 🆕
+
+Kopiert den Wert aus einem anderen State - perfekt für dynamische Szenen:
+
+```json
+{
+	"id": "hm-rpc.0.Thermostat.SET_TEMPERATURE",
+	"type": "state",
+	"value": "weather.0.current.temperature",
+	"description": "Heizung an Außentemperatur anpassen"
+}
+```
+
+##### ⚡ Type: `"expression"` (geplant)
+
+Evaluiert einen Ausdruck - für komplexe Berechnungen (zukünftige Funktion):
+
+```json
+{
+	"id": "javascript.0.variables.result",
+	"type": "expression",
+	"value": "temperature + 2",
+	"description": "Temperatur plus 2 Grad"
+}
+```
+
+#### Rückwärtskompatibilität
+
+Bestehende Jobs ohne `type`-Feld funktionieren weiterhin:
+
 ```json
 {
 	"id": "adapter.instance.device.state",
@@ -120,7 +174,7 @@ Hier werden alle Ihre Cron-Jobs gespeichert. Ein Beispiel-Job wird automatisch e
 
 ## 📊 Beispiel-Szenarien
 
-### Morgendliche Beleuchtung
+### Morgendliche Beleuchtung (klassisch)
 
 ```json
 {
@@ -134,15 +188,54 @@ Hier werden alle Ihre Cron-Jobs gespeichert. Ein Beispiel-Job wird automatisch e
 }
 ```
 
-### Abendliche Szene
+### Intelligente Heizungssteuerung 🆕
+
+```json
+{
+	"cron": "0 6 * * *",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Thermostat.SET_TEMPERATURE",
+			"type": "state",
+			"value": "weather.0.forecast.0.tempMax",
+			"description": "Heizung basierend auf Wettervorhersage"
+		},
+		{
+			"id": "hm-rpc.0.Schlafzimmer.Thermostat.SET_TEMPERATURE",
+			"type": "state",
+			"value": "javascript.0.variables.optimalSleepTemp",
+			"description": "Optimale Schlaftemperatur aus Berechnung"
+		}
+	],
+	"active": true,
+	"type": "recurring"
+}
+```
+
+### Kombinierte Szene (verschiedene Target-Types) 🆕
 
 ```json
 {
 	"cron": "0 20 * * *",
 	"targets": [
-		{ "id": "hm-rpc.0.Wohnzimmer.Licht.STATE", "value": true },
-		{ "id": "hm-rpc.0.Wohnzimmer.Licht.LEVEL", "value": 30 },
-		{ "id": "hm-rpc.0.Jalousie.LEVEL", "value": 0 }
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.STATE",
+			"type": "value",
+			"value": true,
+			"description": "Licht direkt einschalten"
+		},
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.LEVEL",
+			"type": "state",
+			"value": "javascript.0.variables.eveningBrightness",
+			"description": "Helligkeit aus berechneter Variable"
+		},
+		{
+			"id": "hm-rpc.0.Jalousie.LEVEL",
+			"type": "value",
+			"value": 0,
+			"description": "Jalousie komplett schließen"
+		}
 	],
 	"active": true,
 	"type": "recurring"
@@ -304,6 +397,10 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 - (kuen_je) Implemented cron job manager with multi-target support
 - (kuen_je) Added manual trigger functionality for each job
 - (kuen_je) Added job status monitoring and error handling
+- (kuen_je) Enhanced target configuration with type system (value, state, expression)
+- (kuen_je) Implemented state reference functionality for dynamic values
+- (kuen_je) Added comprehensive admin interface with configuration options
+- (kuen_je) Improved event-driven architecture for better performance
 
 ## License
 

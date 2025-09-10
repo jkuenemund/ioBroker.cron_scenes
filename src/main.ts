@@ -58,6 +58,19 @@ class CronScenes extends utils.Adapter {
 			native: {},
 		});
 
+		// Create second test variable for state reference demo
+		await this.setObjectNotExistsAsync("testVariable2", {
+			type: "state",
+			common: {
+				name: "testVariable2",
+				type: "boolean",
+				role: "indicator",
+				read: true,
+				write: true,
+			},
+			native: {},
+		});
+
 		// In order to get state updates, you need to subscribe to them. The following line adds a subscription for our variable we have created above.
 		this.subscribeStates("testVariable");
 		// You can also add a subscription for multiple states. The following line watches all states starting with "lights."
@@ -133,13 +146,21 @@ class CronScenes extends utils.Adapter {
 				},
 			});
 
-			// Set example configuration as state value
+			// Set example configuration as state value with different target types
 			const exampleConfig = {
-				cron: "* * * * *",
+				cron: "*/5 * * * *", // Every 5 minutes for demo
 				targets: [
 					{
 						id: "cron_scenes.0.testVariable",
+						type: "value",
 						value: true,
+						description: "Direct boolean value",
+					},
+					{
+						id: "cron_scenes.0.testVariable2",
+						type: "state",
+						value: "cron_scenes.0.testVariable",
+						description: "Copy value from another state",
 					},
 				],
 				active: this.config.defaultJobsActive || false,

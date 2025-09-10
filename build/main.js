@@ -56,6 +56,17 @@ class CronScenes extends utils.Adapter {
       },
       native: {}
     });
+    await this.setObjectNotExistsAsync("testVariable2", {
+      type: "state",
+      common: {
+        name: "testVariable2",
+        type: "boolean",
+        role: "indicator",
+        read: true,
+        write: true
+      },
+      native: {}
+    });
     this.subscribeStates("testVariable");
     this.setState("testVariable", { val: true, ack: false });
     this.setState("testVariable", { val: true, ack: true });
@@ -103,11 +114,20 @@ class CronScenes extends utils.Adapter {
         }
       });
       const exampleConfig = {
-        cron: "* * * * *",
+        cron: "*/5 * * * *",
+        // Every 5 minutes for demo
         targets: [
           {
             id: "cron_scenes.0.testVariable",
-            value: true
+            type: "value",
+            value: true,
+            description: "Direct boolean value"
+          },
+          {
+            id: "cron_scenes.0.testVariable2",
+            type: "state",
+            value: "cron_scenes.0.testVariable",
+            description: "Copy value from another state"
           }
         ],
         active: this.config.defaultJobsActive || false,

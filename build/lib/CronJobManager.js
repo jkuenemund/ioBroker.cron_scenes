@@ -31,6 +31,7 @@ __export(CronJobManager_exports, {
   CRON_ERROR_CODE: () => CRON_ERROR_CODE,
   CRON_JOB_STATUS: () => CRON_JOB_STATUS,
   CRON_JOB_TYPE: () => CRON_JOB_TYPE,
+  CRON_TARGET_TYPE: () => CRON_TARGET_TYPE,
   ConfigValidator: () => ConfigValidator,
   CronJobError: () => CronJobError,
   CronJobManager: () => CronJobManager
@@ -45,6 +46,11 @@ const CRON_JOB_STATUS = {
 const CRON_JOB_TYPE = {
   ONCE: "once",
   RECURRING: "recurring"
+};
+const CRON_TARGET_TYPE = {
+  VALUE: "value",
+  STATE: "state",
+  EXPRESSION: "expression"
 };
 const CRON_ERROR_CODE = {
   INVALID_CRON: "INVALID_CRON",
@@ -93,19 +99,46 @@ class ConfigValidator {
           CRON_ERROR_CODE.CONFIG_INVALID
         );
       }
-      if (target.value === void 0 || target.value === null) {
+      if (target.value === void 0) {
         throw new CronJobError(`Target ${index} value is required`, jobId, CRON_ERROR_CODE.CONFIG_INVALID);
       }
-      const valueType = typeof target.value;
-      if (!["string", "number", "boolean"].includes(valueType) && target.value !== null) {
+      const targetType = target.type || CRON_TARGET_TYPE.VALUE;
+      if (!Object.values(CRON_TARGET_TYPE).includes(targetType)) {
         throw new CronJobError(
-          `Target ${index} value must be string, number, boolean, or null`,
+          `Target ${index} type must be one of: ${Object.values(CRON_TARGET_TYPE).join(", ")}`,
           jobId,
           CRON_ERROR_CODE.CONFIG_INVALID
         );
       }
+      if (targetType === CRON_TARGET_TYPE.STATE) {
+        if (typeof target.value !== "string" || !target.value.trim()) {
+          throw new CronJobError(
+            `Target ${index} with type 'state' must have a non-empty string value (state ID)`,
+            jobId,
+            CRON_ERROR_CODE.CONFIG_INVALID
+          );
+        }
+      } else if (targetType === CRON_TARGET_TYPE.VALUE) {
+        const valueType = typeof target.value;
+        if (!["string", "number", "boolean"].includes(valueType) && target.value !== null) {
+          throw new CronJobError(
+            `Target ${index} with type 'value' must be string, number, boolean, or null`,
+            jobId,
+            CRON_ERROR_CODE.CONFIG_INVALID
+          );
+        }
+      } else if (targetType === CRON_TARGET_TYPE.EXPRESSION) {
+        if (typeof target.value !== "string" || !target.value.trim()) {
+          throw new CronJobError(
+            `Target ${index} with type 'expression' must have a non-empty string value`,
+            jobId,
+            CRON_ERROR_CODE.CONFIG_INVALID
+          );
+        }
+      }
       return {
         id: target.id,
+        type: targetType,
         value: target.value,
         description: target.description || void 0
       };
@@ -370,17 +403,69 @@ class CronJobManager {
    */
   async executeTarget(target) {
     try {
+      const resolvedValue = await this.resolveTargetValue(target);
       await this.adapter.setForeignStateAsync(target.id, {
-        val: target.value,
+        val: resolvedValue,
         ack: false
       });
-      this.adapter.log.debug(`CronJobManager: Set ${target.id} = ${target.value}`);
+      this.adapter.log.debug(
+        `CronJobManager: Set ${target.id} = ${resolvedValue} (type: ${target.type || CRON_TARGET_TYPE.VALUE})`
+      );
     } catch (error) {
       const errorMessage = `Error setting ${target.id}: ${error instanceof Error ? error.message : String(error)}`;
       this.adapter.log.error(`CronJobManager: ${errorMessage}`);
       throw new CronJobError(
         errorMessage,
         target.id,
+        CRON_ERROR_CODE.EXECUTION_FAILED,
+        error instanceof Error ? error : void 0
+      );
+    }
+  }
+  /**
+   * Resolve target value based on type
+   */
+  async resolveTargetValue(target) {
+    const targetType = target.type || CRON_TARGET_TYPE.VALUE;
+    switch (targetType) {
+      case CRON_TARGET_TYPE.VALUE:
+        return target.value;
+      case CRON_TARGET_TYPE.STATE:
+        return await this.resolveStateReference(target.value, target.id);
+      case CRON_TARGET_TYPE.EXPRESSION:
+        this.adapter.log.warn(
+          `CronJobManager: Expression type not yet implemented for target ${target.id}, using direct value`
+        );
+        return target.value;
+      default:
+        this.adapter.log.warn(
+          `CronJobManager: Unknown target type '${targetType}' for target ${target.id}, using direct value`
+        );
+        return target.value;
+    }
+  }
+  /**
+   * Resolve state reference to actual state value
+   */
+  async resolveStateReference(stateId, targetId) {
+    try {
+      if (!stateId || typeof stateId !== "string") {
+        throw new CronJobError(`Invalid state reference: ${stateId}`, targetId, CRON_ERROR_CODE.CONFIG_INVALID);
+      }
+      this.adapter.log.debug(`CronJobManager: Resolving state reference '${stateId}' for target ${targetId}`);
+      const state = await this.adapter.getStateAsync(stateId);
+      if (!state) {
+        throw new CronJobError(`State '${stateId}' not found`, targetId, CRON_ERROR_CODE.TARGET_NOT_FOUND);
+      }
+      this.adapter.log.debug(`CronJobManager: Resolved state '${stateId}' = ${state.val} for target ${targetId}`);
+      return state.val;
+    } catch (error) {
+      if (error instanceof CronJobError) {
+        throw error;
+      }
+      throw new CronJobError(
+        `Error resolving state reference '${stateId}': ${error instanceof Error ? error.message : String(error)}`,
+        targetId,
         CRON_ERROR_CODE.EXECUTION_FAILED,
         error instanceof Error ? error : void 0
       );
@@ -478,6 +563,7 @@ class CronJobManager {
   CRON_ERROR_CODE,
   CRON_JOB_STATUS,
   CRON_JOB_TYPE,
+  CRON_TARGET_TYPE,
   ConfigValidator,
   CronJobError,
   CronJobManager
