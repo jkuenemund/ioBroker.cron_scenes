@@ -97,7 +97,7 @@ class CronScenes extends utils.Adapter {
             }
           ],
           active: false,
-          type: "recurring"
+          type: import_CronJobManager.CRON_JOB_TYPE.RECURRING
         }
       });
       const exampleConfig = {
@@ -109,7 +109,7 @@ class CronScenes extends utils.Adapter {
           }
         ],
         active: false,
-        type: "recurring"
+        type: import_CronJobManager.CRON_JOB_TYPE.RECURRING
       };
       this.setState(exampleJobId, {
         val: JSON.stringify(exampleConfig, null, 2),
@@ -163,12 +163,23 @@ class CronScenes extends utils.Adapter {
           this.log.error(`Error triggering job ${jobId}: ${error}`);
         });
         this.setState(id, { val: false, ack: true });
-      }
-      if (id.endsWith(".status")) {
         return;
+      }
+      if (id.endsWith(".status") || id.endsWith(".trigger")) {
+        return;
+      }
+      const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
+      if (id.startsWith(cronFolder) && !id.endsWith(".status") && !id.endsWith(".trigger")) {
+        this.cronJobManager.handleJobStateChange(id).catch((error) => {
+          this.log.error(`Error handling job state change for ${id}: ${error}`);
+        });
       }
     } else {
       this.log.debug(`state ${id} deleted`);
+      const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
+      if (id.startsWith(cronFolder)) {
+        this.cronJobManager.removeJob(id);
+      }
     }
   }
   /**

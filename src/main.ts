@@ -7,7 +7,7 @@
 import * as utils from "@iobroker/adapter-core";
 
 // Load our modules
-import { CronJobConfig, CronJobManager } from "./lib/CronJobManager";
+import { CRON_JOB_TYPE, CronJobConfig, CronJobManager } from "./lib/CronJobManager";
 
 class CronScenes extends utils.Adapter {
 	private cronJobManager: CronJobManager;
@@ -127,7 +127,7 @@ class CronScenes extends utils.Adapter {
 						},
 					],
 					active: false,
-					type: "recurring",
+					type: CRON_JOB_TYPE.RECURRING,
 				},
 			});
 
@@ -141,7 +141,7 @@ class CronScenes extends utils.Adapter {
 					},
 				],
 				active: false,
-				type: "recurring",
+				type: CRON_JOB_TYPE.RECURRING,
 			};
 
 			this.setState(exampleJobId, {
@@ -217,15 +217,32 @@ class CronScenes extends utils.Adapter {
 
 				// Reset trigger state
 				this.setState(id, { val: false, ack: true });
+				return;
 			}
 
 			// Skip processing status states as job changes
-			if (id.endsWith(".status")) {
+			if (id.endsWith(".status") || id.endsWith(".trigger")) {
 				return;
+			}
+
+			// Check if this is a job configuration change
+			const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
+			if (id.startsWith(cronFolder) && !id.endsWith(".status") && !id.endsWith(".trigger")) {
+				// Handle job configuration change
+				this.cronJobManager.handleJobStateChange(id).catch((error) => {
+					this.log.error(`Error handling job state change for ${id}: ${error}`);
+				});
 			}
 		} else {
 			// The state was deleted
 			this.log.debug(`state ${id} deleted`);
+
+			// Check if this is a job deletion
+			const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
+			if (id.startsWith(cronFolder)) {
+				// Job deleted
+				this.cronJobManager.removeJob(id);
+			}
 		}
 	}
 

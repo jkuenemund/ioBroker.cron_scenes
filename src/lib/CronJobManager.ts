@@ -1,16 +1,151 @@
 import * as cron from "node-cron";
 
 /**
+ * Constants for cron job status and types
+ */
+export const CRON_JOB_STATUS = {
+	SUCCESS: "success",
+	ERROR: "error",
+	PENDING: "pending",
+} as const;
+
+export const CRON_JOB_TYPE = {
+	ONCE: "once",
+	RECURRING: "recurring",
+} as const;
+
+export type CronJobStatusType = (typeof CRON_JOB_STATUS)[keyof typeof CRON_JOB_STATUS];
+export type CronJobTypeType = (typeof CRON_JOB_TYPE)[keyof typeof CRON_JOB_TYPE];
+
+/**
+ * Custom error types for better error handling
+ */
+export const CRON_ERROR_CODE = {
+	INVALID_CRON: "INVALID_CRON",
+	TARGET_NOT_FOUND: "TARGET_NOT_FOUND",
+	EXECUTION_FAILED: "EXECUTION_FAILED",
+	CONFIG_INVALID: "CONFIG_INVALID",
+} as const;
+
+export type CronErrorCode = (typeof CRON_ERROR_CODE)[keyof typeof CRON_ERROR_CODE];
+
+export class CronJobError extends Error {
+	constructor(
+		message: string,
+		public readonly jobId: string,
+		public readonly code: CronErrorCode,
+		public readonly originalError?: Error,
+	) {
+		super(message);
+		this.name = "CronJobError";
+	}
+}
+
+/**
+ * Configuration validation utilities
+ */
+export class ConfigValidator {
+	/**
+	 * Validate a cron job configuration
+	 */
+	static validateCronJobConfig(config: any, jobId: string): CronJobConfig {
+		if (!config || typeof config !== "object") {
+			throw new CronJobError("Configuration must be an object", jobId, CRON_ERROR_CODE.CONFIG_INVALID);
+		}
+
+		// Validate cron expression
+		if (!config.cron || typeof config.cron !== "string") {
+			throw new CronJobError(
+				"Cron expression is required and must be a string",
+				jobId,
+				CRON_ERROR_CODE.CONFIG_INVALID,
+			);
+		}
+
+		if (!cron.validate(config.cron)) {
+			throw new CronJobError(`Invalid cron expression: ${config.cron}`, jobId, CRON_ERROR_CODE.INVALID_CRON);
+		}
+
+		// Validate targets
+		if (!Array.isArray(config.targets) || config.targets.length === 0) {
+			throw new CronJobError("Targets must be a non-empty array", jobId, CRON_ERROR_CODE.CONFIG_INVALID);
+		}
+
+		const validatedTargets: CronTarget[] = config.targets.map((target: any, index: number) => {
+			if (!target || typeof target !== "object") {
+				throw new CronJobError(`Target ${index} must be an object`, jobId, CRON_ERROR_CODE.CONFIG_INVALID);
+			}
+
+			if (!target.id || typeof target.id !== "string") {
+				throw new CronJobError(
+					`Target ${index} id is required and must be a string`,
+					jobId,
+					CRON_ERROR_CODE.CONFIG_INVALID,
+				);
+			}
+
+			if (target.value === undefined || target.value === null) {
+				throw new CronJobError(`Target ${index} value is required`, jobId, CRON_ERROR_CODE.CONFIG_INVALID);
+			}
+
+			// Validate value type
+			const valueType = typeof target.value;
+			if (!["string", "number", "boolean"].includes(valueType) && target.value !== null) {
+				throw new CronJobError(
+					`Target ${index} value must be string, number, boolean, or null`,
+					jobId,
+					CRON_ERROR_CODE.CONFIG_INVALID,
+				);
+			}
+
+			return {
+				id: target.id,
+				value: target.value,
+				description: target.description || undefined,
+			};
+		});
+
+		// Validate active flag
+		if (typeof config.active !== "boolean") {
+			throw new CronJobError("Active flag must be a boolean", jobId, CRON_ERROR_CODE.CONFIG_INVALID);
+		}
+
+		// Validate type
+		if (!config.type || !Object.values(CRON_JOB_TYPE).includes(config.type)) {
+			throw new CronJobError(
+				`Type must be one of: ${Object.values(CRON_JOB_TYPE).join(", ")}`,
+				jobId,
+				CRON_ERROR_CODE.CONFIG_INVALID,
+			);
+		}
+
+		return {
+			cron: config.cron,
+			targets: validatedTargets,
+			active: config.active,
+			type: config.type,
+			error: config.error || null,
+		};
+	}
+}
+
+/**
+ * Interface for a cron job target
+ */
+export interface CronTarget {
+	id: string;
+	value: string | number | boolean | null;
+	description?: string;
+}
+
+/**
  * Interface for a cron job configuration
  */
 export interface CronJobConfig {
 	cron: string;
-	targets: Array<{
-		id: string;
-		value: any;
-	}>;
+	targets: CronTarget[];
 	active: boolean;
-	type: "once" | "recurring";
+	type: CronJobTypeType;
 	error?: string | null;
 }
 
@@ -19,9 +154,30 @@ export interface CronJobConfig {
  */
 export interface CronJobStatus {
 	lastRun?: string;
-	status: "success" | "error" | "pending";
+	status: CronJobStatusType;
 	nextRun?: string;
 	error?: string | null;
+}
+
+/**
+ * Interface for adapter methods used by CronJobManager
+ */
+export interface AdapterInterface {
+	log: ioBroker.Logger;
+	config: {
+		cronFolder?: string;
+		checkInterval?: number;
+		enableLogging?: boolean;
+	};
+	namespace: string;
+	setState(id: string, state: ioBroker.SettableState): void;
+	setStateAsync(id: string, state: ioBroker.SettableState): any;
+	getStateAsync(id: string): any;
+	getStatesAsync(pattern: string): any;
+	getObjectAsync(id: string): any;
+	setObjectAsync(id: string, obj: ioBroker.SettableObject): any;
+	setObjectNotExistsAsync(id: string, obj: ioBroker.SettableObject): any;
+	setForeignStateAsync(id: string, state: ioBroker.SettableState): any;
 }
 
 /**
@@ -38,11 +194,11 @@ interface RegisteredCronJob {
  * CronJobManager handles all cron job operations
  */
 export class CronJobManager {
-	private adapter: any; // Use any to avoid TypeScript export issues
+	private adapter: AdapterInterface;
 	private jobs: Map<string, RegisteredCronJob> = new Map();
 	private checkInterval?: NodeJS.Timeout;
 
-	constructor(adapter: any) {
+	constructor(adapter: AdapterInterface) {
 		this.adapter = adapter;
 	}
 
@@ -52,13 +208,10 @@ export class CronJobManager {
 	public initialize(): void {
 		this.adapter.log.info("CronJobManager: Initializing...");
 
-		// Start periodic check for job state changes
-		const interval = this.adapter.config.checkInterval || 30;
-		this.checkInterval = setInterval(() => {
-			this.checkForJobChanges();
-		}, interval * 1000);
+		// Perform initial scan for existing jobs
+		this.checkForJobChanges();
 
-		this.adapter.log.info(`CronJobManager: Initialized with ${interval}s check interval`);
+		this.adapter.log.info("CronJobManager: Initialized (event-driven mode)");
 	}
 
 	/**
@@ -66,12 +219,6 @@ export class CronJobManager {
 	 */
 	public shutdown(): void {
 		this.adapter.log.info("CronJobManager: Shutting down...");
-
-		// Clear check interval
-		if (this.checkInterval) {
-			clearInterval(this.checkInterval);
-			this.checkInterval = undefined;
-		}
 
 		// Stop all running jobs
 		for (const [jobId, job] of this.jobs) {
@@ -88,14 +235,12 @@ export class CronJobManager {
 	/**
 	 * Add or update a cron job
 	 */
-	public async addOrUpdateJob(jobId: string, config: CronJobConfig): Promise<void> {
+	public async addOrUpdateJob(jobId: string, config: any): Promise<void> {
 		try {
 			this.adapter.log.debug(`CronJobManager: Adding/updating job ${jobId}`);
 
-			// Validate cron expression
-			if (!cron.validate(config.cron)) {
-				throw new Error(`Invalid cron expression: ${config.cron}`);
-			}
+			// Validate and sanitize configuration
+			const validatedConfig = ConfigValidator.validateCronJobConfig(config, jobId);
 
 			// Stop existing job if it exists
 			const existingJob = this.jobs.get(jobId);
@@ -106,20 +251,20 @@ export class CronJobManager {
 			// Create new job
 			const newJob: RegisteredCronJob = {
 				id: jobId,
-				config: { ...config },
+				config: { ...validatedConfig },
 				status: {
-					status: "pending",
-					nextRun: config.active ? this.getNextRunTime(config.cron) : undefined,
+					status: CRON_JOB_STATUS.PENDING,
+					nextRun: validatedConfig.active ? this.getNextRunTime(validatedConfig.cron) : undefined,
 				},
 			};
 
 			// Create and start cron task if active
-			if (config.active) {
-				newJob.task = cron.schedule(config.cron, () => {
+			if (validatedConfig.active) {
+				newJob.task = cron.schedule(validatedConfig.cron, () => {
 					this.executeJob(jobId);
 				});
 
-				this.adapter.log.info(`CronJobManager: Started job ${jobId} with cron '${config.cron}'`);
+				this.adapter.log.info(`CronJobManager: Started job ${jobId} with cron '${validatedConfig.cron}'`);
 			} else {
 				this.adapter.log.info(`CronJobManager: Job ${jobId} created but not active`);
 			}
@@ -148,7 +293,7 @@ export class CronJobManager {
 
 			// Update error status
 			const errorStatus: CronJobStatus = {
-				status: "error",
+				status: CRON_JOB_STATUS.ERROR,
 				error: error instanceof Error ? error.message : String(error),
 			};
 
@@ -172,6 +317,57 @@ export class CronJobManager {
 	}
 
 	/**
+	 * Handle job state change (called from adapter onStateChange)
+	 */
+	public async handleJobStateChange(jobId: string): Promise<void> {
+		try {
+			this.adapter.log.debug(`CronJobManager: Handling state change for job ${jobId}`);
+
+			// Get current state and object
+			const state = await this.adapter.getStateAsync(jobId);
+			const obj = await this.adapter.getObjectAsync(jobId);
+
+			if (!state || !obj) {
+				this.adapter.log.debug(`CronJobManager: State or object not found for job ${jobId}`);
+				return;
+			}
+
+			let config: CronJobConfig;
+
+			// Try to get config from state value first, then from native as fallback
+			if ((state as any).val && typeof (state as any).val === "string") {
+				try {
+					config = JSON.parse((state as any).val) as CronJobConfig;
+					this.adapter.log.debug(`CronJobManager: Using config from state value for job ${jobId}`);
+				} catch (error) {
+					this.adapter.log.error(`CronJobManager: Error parsing job config from state ${jobId}: ${error}`);
+					return;
+				}
+			} else if (obj.native && (obj.native as any).cron) {
+				config = obj.native as CronJobConfig;
+				this.adapter.log.debug(`CronJobManager: Using config from native object for job ${jobId}`);
+			} else {
+				this.adapter.log.debug(`CronJobManager: No valid config found for job ${jobId}`);
+				return;
+			}
+
+			// Check if job needs to be updated
+			const existingJob = this.jobs.get(jobId);
+			if (!existingJob || JSON.stringify(existingJob.config) !== JSON.stringify(config)) {
+				// Remove existing job completely before adding the new one
+				if (existingJob) {
+					this.adapter.log.info(`CronJobManager: Configuration changed for job ${jobId}, removing old job`);
+					this.removeJob(jobId);
+				}
+				this.adapter.log.info(`CronJobManager: Adding job ${jobId} with new configuration`);
+				await this.addOrUpdateJob(jobId, config);
+			}
+		} catch (error) {
+			this.adapter.log.error(`CronJobManager: Error handling state change for job ${jobId}: ${error}`);
+		}
+	}
+
+	/**
 	 * Manually trigger a job
 	 */
 	public async triggerJob(jobId: string): Promise<void> {
@@ -180,7 +376,7 @@ export class CronJobManager {
 
 		const job = this.jobs.get(jobId);
 		if (!job) {
-			throw new Error(`Job ${jobId} not found`);
+			throw new CronJobError(`Job ${jobId} not found`, jobId, CRON_ERROR_CODE.TARGET_NOT_FOUND);
 		}
 
 		this.adapter.log.info(`CronJobManager: Manually triggering job ${jobId}`);
@@ -267,9 +463,9 @@ export class CronJobManager {
 			// Update status
 			const status: CronJobStatus = {
 				lastRun: startTime,
-				status: "success",
+				status: CRON_JOB_STATUS.SUCCESS,
 				nextRun:
-					job.config.active && job.config.type === "recurring"
+					job.config.active && job.config.type === CRON_JOB_TYPE.RECURRING
 						? this.getNextRunTime(job.config.cron)
 						: undefined,
 			};
@@ -278,7 +474,7 @@ export class CronJobManager {
 			await this.updateJobStatus(jobId, status);
 
 			// Handle once-type jobs
-			if (job.config.type === "once") {
+			if (job.config.type === CRON_JOB_TYPE.ONCE) {
 				this.adapter.log.info(`CronJobManager: One-time job ${jobId} completed, deactivating`);
 				job.config.active = false;
 				if (job.task) {
@@ -295,10 +491,10 @@ export class CronJobManager {
 
 			const errorStatus: CronJobStatus = {
 				lastRun: startTime,
-				status: "error",
+				status: CRON_JOB_STATUS.ERROR,
 				error: error instanceof Error ? error.message : String(error),
 				nextRun:
-					job.config.active && job.config.type === "recurring"
+					job.config.active && job.config.type === CRON_JOB_TYPE.RECURRING
 						? this.getNextRunTime(job.config.cron)
 						: undefined,
 			};
@@ -311,7 +507,7 @@ export class CronJobManager {
 	/**
 	 * Execute a single target
 	 */
-	private async executeTarget(target: { id: string; value: any }): Promise<void> {
+	private async executeTarget(target: CronTarget): Promise<void> {
 		try {
 			// Set the state with proper acknowledgment
 			await this.adapter.setForeignStateAsync(target.id, {
@@ -320,8 +516,14 @@ export class CronJobManager {
 			});
 			this.adapter.log.debug(`CronJobManager: Set ${target.id} = ${target.value}`);
 		} catch (error) {
-			this.adapter.log.error(`CronJobManager: Error setting ${target.id}: ${error}`);
-			throw error;
+			const errorMessage = `Error setting ${target.id}: ${error instanceof Error ? error.message : String(error)}`;
+			this.adapter.log.error(`CronJobManager: ${errorMessage}`);
+			throw new CronJobError(
+				errorMessage,
+				target.id,
+				CRON_ERROR_CODE.EXECUTION_FAILED,
+				error instanceof Error ? error : undefined,
+			);
 		}
 	}
 
@@ -347,7 +549,7 @@ export class CronJobManager {
 			});
 
 			// Set the status value
-			await this.adapter.setStateAsync(statusId, {
+			this.adapter.setState(statusId, {
 				val: JSON.stringify(status),
 				ack: true,
 			});
@@ -393,7 +595,7 @@ export class CronJobManager {
 	}
 
 	/**
-	 * Check for job state changes
+	 * Initial scan for existing jobs (called once during initialization)
 	 */
 	private async checkForJobChanges(): Promise<void> {
 		try {
@@ -401,70 +603,25 @@ export class CronJobManager {
 
 			// Get all states in the cron folder
 			const states = await this.adapter.getStatesAsync(`${cronFolder}.*`);
+			if (!states) {
+				this.adapter.log.debug("CronJobManager: No existing jobs found during initialization");
+				return;
+			}
 
-			if (!states) return;
+			this.adapter.log.debug(`CronJobManager: Found ${Object.keys(states).length} states during initialization`);
 
 			// Process each state
 			for (const [stateId, state] of Object.entries(states)) {
 				// Skip trigger states, status states and non-job states
 				if (stateId.endsWith(".trigger") || stateId.endsWith(".status") || !state) continue;
 
-				const jobId = stateId;
-
-				// Get job configuration from object
-				const obj = await this.adapter.getObjectAsync(jobId);
-				if (!obj) continue;
-
-				let config: CronJobConfig;
-
-				// Try to get config from state value first, then from native as fallback
-				if ((state as any).val && typeof (state as any).val === "string") {
-					try {
-						config = JSON.parse((state as any).val) as CronJobConfig;
-						this.adapter.log.debug(`CronJobManager: Using config from state value for job ${jobId}`);
-					} catch (error) {
-						this.adapter.log.error(
-							`CronJobManager: Error parsing job config from state ${jobId}: ${error}`,
-						);
-						continue;
-					}
-				} else if (obj.native && (obj.native as any).cron) {
-					config = obj.native as CronJobConfig;
-					this.adapter.log.debug(`CronJobManager: Using config from native object for job ${jobId}`);
-				} else {
-					this.adapter.log.debug(`CronJobManager: No valid config found for job ${jobId}`);
-					continue;
-				}
-
-				// Validate config
-				if (!config.cron || !config.targets) {
-					this.adapter.log.error(`CronJobManager: Invalid config for job ${jobId}: missing cron or targets`);
-					continue;
-				}
-
-				// Check if job needs to be updated
-				const existingJob = this.jobs.get(jobId);
-				if (!existingJob || JSON.stringify(existingJob.config) !== JSON.stringify(config)) {
-					// Remove existing job completely before adding the new one
-					if (existingJob) {
-						this.adapter.log.info(
-							`CronJobManager: Configuration changed for job ${jobId}, removing old job`,
-						);
-						this.removeJob(jobId);
-					}
-					this.adapter.log.info(`CronJobManager: Adding job ${jobId} with new configuration`);
-					await this.addOrUpdateJob(jobId, config);
-				}
+				// Process this job using the new event-driven method
+				await this.handleJobStateChange(stateId);
 			}
 
-			// Remove jobs that no longer exist
-			for (const jobId of this.jobs.keys()) {
-				if (!states[jobId]) {
-					this.removeJob(jobId);
-				}
-			}
+			this.adapter.log.info(`CronJobManager: Initialized ${this.jobs.size} jobs`);
 		} catch (error) {
-			this.adapter.log.error(`CronJobManager: Error checking for job changes: ${error}`);
+			this.adapter.log.error(`CronJobManager: Error during initial job scan: ${error}`);
 		}
 	}
 
