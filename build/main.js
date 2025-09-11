@@ -45,7 +45,6 @@ class CronScenes extends utils.Adapter {
     this.log.info("config defaultJobsActive: " + this.config.defaultJobsActive);
     this.log.info("config maxConcurrentJobs: " + this.config.maxConcurrentJobs);
     this.log.info("config jobTimeout: " + this.config.jobTimeout);
-    this.log.info("config vmMemoryLimit: " + this.config.vmMemoryLimit);
     await this.setObjectNotExistsAsync("testVariable", {
       type: "state",
       common: {
@@ -140,12 +139,6 @@ class CronScenes extends utils.Adapter {
             type: "state",
             value: "cron_scenes.0.testVariable",
             description: "Copy value from another state"
-          },
-          {
-            id: "cron_scenes.0.testVariable3",
-            type: "expression",
-            value: "state('cron_scenes.0.testVariable') ? Math.round(Math.random() * 100) : 0",
-            description: "Random number if testVariable is true, otherwise 0"
           }
         ],
         active: this.config.defaultJobsActive || false,

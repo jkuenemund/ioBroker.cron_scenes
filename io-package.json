@@ -1,8 +1,34 @@
 {
 	"common": {
 		"name": "cron_scenes",
-		"version": "0.0.2",
+		"version": "0.1.0",
 		"news": {
+			"0.1.0": {
+				"en": "Removed expression engine - stable version with value and state targets only",
+				"de": "Expression-Engine entfernt - stabile Version nur mit value und state Targets",
+				"ru": "Удален движок выражений - стабильная версия только с целями value и state",
+				"pt": "Mecanismo de expressões removido - versão estável apenas com alvos value e state",
+				"nl": "Expression engine verwijderd - stabiele versie met alleen value en state doelen",
+				"fr": "Moteur d'expressions supprimé - version stable avec seulement les cibles value et state",
+				"it": "Rimosso motore espressioni - versione stabile solo con target value e state",
+				"es": "Motor de expresiones eliminado - versión estable solo con objetivos value y state",
+				"pl": "Usunięto silnik wyrażeń - stabilna wersja tylko z celami value i state",
+				"uk": "Видалено движок виразів - стабільна версія лише з цілями value та state",
+				"zh-cn": "移除表达式引擎 - 仅包含value和state目标的稳定版本"
+			},
+			"0.0.3": {
+				"en": "Temporarily disabled isolated-vm due to SIGSEGV crashes on ARM64",
+				"de": "Isolated-vm temporär deaktiviert wegen SIGSEGV-Abstürzen auf ARM64",
+				"ru": "Временно отключен isolated-vm из-за сбоев SIGSEGV на ARM64",
+				"pt": "Isolated-vm temporariamente desabilitado devido a crashes SIGSEGV no ARM64",
+				"nl": "Isolated-vm tijdelijk uitgeschakeld vanwege SIGSEGV crashes op ARM64",
+				"fr": "Isolated-vm temporairement désactivé en raison de plantages SIGSEGV sur ARM64",
+				"it": "Isolated-vm temporaneamente disabilitato a causa di crash SIGSEGV su ARM64",
+				"es": "Isolated-vm deshabilitado temporalmente debido a crashes SIGSEGV en ARM64",
+				"pl": "Isolated-vm tymczasowo wyłączony z powodu awarii SIGSEGV na ARM64",
+				"uk": "Isolated-vm тимчасово відключений через збої SIGSEGV на ARM64",
+				"zh-cn": "由于ARM64上的SIGSEGV崩溃，暂时禁用isolated-vm"
+			},
 			"0.0.2": {
 				"en": "Fixed admin dependency version constraint",
 				"de": "Admin-Abhängigkeits-Versionsbeschränkung behoben",
