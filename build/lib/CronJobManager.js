@@ -127,11 +127,21 @@ class ConfigValidator {
           );
         }
       }
+      if (target.delay !== void 0) {
+        if (typeof target.delay !== "number" || target.delay < 0 || target.delay > 6e4) {
+          throw new CronJobError(
+            `Target ${index} delay must be a number between 0 and 60000 milliseconds`,
+            jobId,
+            CRON_ERROR_CODE.CONFIG_INVALID
+          );
+        }
+      }
       return {
         id: target.id,
         type: targetType,
         value: target.value,
-        description: target.description || void 0
+        description: target.description || void 0,
+        delay: target.delay || void 0
       };
     });
     if (typeof config.active !== "boolean") {
@@ -392,13 +402,17 @@ class CronJobManager {
    */
   async executeTarget(target) {
     try {
+      if (target.delay && target.delay > 0) {
+        this.adapter.log.debug(`CronJobManager: Delaying execution of ${target.id} by ${target.delay}ms`);
+        await new Promise((resolve) => setTimeout(resolve, target.delay));
+      }
       const resolvedValue = await this.resolveTargetValue(target);
       await this.adapter.setForeignStateAsync(target.id, {
         val: resolvedValue,
         ack: false
       });
       this.adapter.log.debug(
-        `CronJobManager: Set ${target.id} = ${resolvedValue} (type: ${target.type || CRON_TARGET_TYPE.VALUE})`
+        `CronJobManager: Set ${target.id} = ${resolvedValue} (type: ${target.type || CRON_TARGET_TYPE.VALUE})${target.delay ? ` after ${target.delay}ms delay` : ""}`
       );
     } catch (error) {
       const errorMessage = `Error setting ${target.id}: ${error instanceof Error ? error.message : String(error)}`;

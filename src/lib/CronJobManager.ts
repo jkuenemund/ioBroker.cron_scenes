@@ -126,11 +126,23 @@ export class ConfigValidator {
 				}
 			}
 
+			// Validate delay if provided
+			if (target.delay !== undefined) {
+				if (typeof target.delay !== "number" || target.delay < 0 || target.delay > 60000) {
+					throw new CronJobError(
+						`Target ${index} delay must be a number between 0 and 60000 milliseconds`,
+						jobId,
+						CRON_ERROR_CODE.CONFIG_INVALID,
+					);
+				}
+			}
+
 			return {
 				id: target.id,
 				type: targetType,
 				value: target.value,
 				description: target.description || undefined,
+				delay: target.delay || undefined,
 			};
 		});
 
@@ -165,6 +177,7 @@ export interface CronTarget {
 	type?: CronTargetType; // Optional for backward compatibility
 	value: string | number | boolean | null;
 	description?: string;
+	delay?: number; // Optional delay in milliseconds before executing this target
 }
 
 /**
@@ -538,6 +551,12 @@ export class CronJobManager {
 	 */
 	private async executeTarget(target: CronTarget): Promise<void> {
 		try {
+			// Apply delay if specified
+			if (target.delay && target.delay > 0) {
+				this.adapter.log.debug(`CronJobManager: Delaying execution of ${target.id} by ${target.delay}ms`);
+				await new Promise((resolve) => setTimeout(resolve, target.delay));
+			}
+
 			// Resolve the target value based on type
 			const resolvedValue = await this.resolveTargetValue(target);
 
@@ -547,7 +566,7 @@ export class CronJobManager {
 				ack: false,
 			});
 			this.adapter.log.debug(
-				`CronJobManager: Set ${target.id} = ${resolvedValue} (type: ${target.type || CRON_TARGET_TYPE.VALUE})`,
+				`CronJobManager: Set ${target.id} = ${resolvedValue} (type: ${target.type || CRON_TARGET_TYPE.VALUE})${target.delay ? ` after ${target.delay}ms delay` : ""}`,
 			);
 		} catch (error) {
 			const errorMessage = `Error setting ${target.id}: ${error instanceof Error ? error.message : String(error)}`;

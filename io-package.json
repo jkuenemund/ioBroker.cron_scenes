@@ -1,8 +1,21 @@
 {
 	"common": {
 		"name": "cron_scenes",
-		"version": "0.1.0",
+		"version": "0.1.1",
 		"news": {
+			"0.1.1": {
+				"en": "Added optional delay functionality for targets",
+				"de": "Optionale Delay-Funktionalität für Targets hinzugefügt",
+				"ru": "Добавлена опциональная функция задержки для целей",
+				"pt": "Adicionada funcionalidade de atraso opcional para alvos",
+				"nl": "Optionele vertraging functionaliteit toegevoegd voor doelen",
+				"fr": "Fonctionnalité de délai optionnel ajoutée pour les cibles",
+				"it": "Aggiunta funzionalità di ritardo opzionale per i target",
+				"es": "Agregada funcionalidad de retraso opcional para objetivos",
+				"pl": "Dodano opcjonalną funkcję opóźnienia dla celów",
+				"uk": "Додано опціональну функцію затримки для цілей",
+				"zh-cn": "为目标添加了可选延迟功能"
+			},
 			"0.1.0": {
 				"en": "Removed expression engine - stable version with value and state targets only",
 				"de": "Expression-Engine entfernt - stabile Version nur mit value und state Targets",
