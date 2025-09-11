@@ -19,7 +19,7 @@ Ein ioBroker Adapter zur zeitbasierten Ausführung von Aktionen (Szenen) über C
 
 - ⏰ **Flexible Zeitsteuerung** - Nutzt Cron-Expressions für präzise Zeitplanung
 - 🎯 **Multi-Target Support** - Ein Job kann mehrere States gleichzeitig setzen
-- 🔄 **Wiederkehrende & Einmalige Jobs** - Unterstützt sowohl recurring als auch once-Jobs
+- 🔄 **Verschiedene Job-Typen** - Unterstützt recurring, once und manual Jobs
 - 🎮 **Manuelle Auslösung** - Jeder Job kann manuell über einen Trigger-Button gestartet werden
 - 📊 **Status-Überwachung** - Vollständige Überwachung der Job-Ausführung mit Fehlermeldungen
 - 🗂️ **Automatische Ordnerstruktur** - Jobs-Ordner wird automatisch beim ersten Start erstellt
@@ -74,12 +74,12 @@ Hier werden alle Ihre Cron-Jobs gespeichert. Ein Beispiel-Job wird automatisch e
 
 ### 📝 Konfigurationsparameter
 
-| Parameter | Typ     | Beschreibung                               | Beispiel         |
-| --------- | ------- | ------------------------------------------ | ---------------- |
-| `cron`    | string  | Cron-Expression für die Zeitsteuerung      | `"0 7 * * 1-5"`  |
-| `targets` | array   | Liste der States die gesetzt werden sollen | siehe unten      |
-| `active`  | boolean | Ob der Job aktiv ist                       | `true` / `false` |
-| `type`    | string  | Job-Typ: `"recurring"` oder `"once"`       | `"recurring"`    |
+| Parameter | Typ     | Beschreibung                                                       | Beispiel         |
+| --------- | ------- | ------------------------------------------------------------------ | ---------------- |
+| `cron`    | string  | Cron-Expression für die Zeitsteuerung (optional für `manual` Jobs) | `"0 7 * * 1-5"`  |
+| `targets` | array   | Liste der States die gesetzt werden sollen                         | siehe unten      |
+| `active`  | boolean | Ob der Job aktiv ist                                               | `true` / `false` |
+| `type`    | string  | Job-Typ: `"recurring"`, `"once"` oder `"manual"`                   | `"recurring"`    |
 
 #### Target-Konfiguration
 
@@ -414,6 +414,39 @@ Bestehende Jobs ohne `type`-Feld funktionieren weiterhin:
 	"type": "once"
 }
 ```
+
+### Manuelle Jobs (Trigger-Only) 🆕
+
+Für Jobs, die nur manuell ausgelöst werden sollen, verwenden Sie den Typ `"manual"`. Diese Jobs benötigen **keine** Cron-Expression:
+
+```json
+{
+	"targets": [
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.STATE",
+			"type": "value",
+			"value": false,
+			"description": "Alle Lichter ausschalten"
+		},
+		{
+			"id": "hm-rpc.0.Heizung.SET_TEMPERATURE",
+			"type": "value",
+			"value": 18,
+			"description": "Heizung auf Eco-Modus",
+			"delay": 1000
+		}
+	],
+	"active": true,
+	"type": "manual"
+}
+```
+
+✅ **Vorteile von Manual Jobs:**
+
+- Kein Cron-Pattern erforderlich
+- Perfekt für Szenen-Buttons in der Visualisierung
+- Können über REST-API oder Node-RED ausgelöst werden
+- Unterstützen alle Target-Typen und Delays
 
 ## 🔧 Konfigurationsoptionen
 

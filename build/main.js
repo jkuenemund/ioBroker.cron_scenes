@@ -23,6 +23,8 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var utils = __toESM(require("@iobroker/adapter-core"));
 var import_CronJobManager = require("./lib/CronJobManager");
+var import_constants = require("./lib/constants");
+var import_examples = require("./lib/examples");
 class CronScenes extends utils.Adapter {
   cronJobManager;
   constructor(options = {}) {
@@ -121,43 +123,40 @@ class CronScenes extends utils.Adapter {
             }
           ],
           active: this.config.defaultJobsActive || false,
-          type: import_CronJobManager.CRON_JOB_TYPE.RECURRING
+          type: import_constants.CRON_JOB_TYPE.RECURRING
         }
       });
-      const exampleConfig = {
-        cron: "*/5 * * * *",
-        // Every 5 minutes for demo
-        targets: [
-          {
-            id: "cron_scenes.0.testVariable",
-            type: "value",
-            value: true,
-            description: "Direct boolean value - executed immediately"
+      if (this.config.createExamples) {
+        const exampleConfig = (0, import_examples.createExampleJobConfig)("recurring", this.config.defaultJobsActive || false);
+        const manualJobId = `${cronFolder}.manualExample`;
+        await this.setObjectNotExistsAsync(manualJobId, {
+          type: "state",
+          common: {
+            name: "Manual Job Example",
+            type: "string",
+            role: "json",
+            read: true,
+            write: true,
+            desc: "Example manual job configuration - trigger only via manual execution"
           },
-          {
-            id: "cron_scenes.0.testVariable2",
-            type: "state",
-            value: "cron_scenes.0.testVariable",
-            description: "Copy value from another state",
-            delay: 500
-          },
-          {
-            id: "cron_scenes.0.testVariable3",
-            type: "value",
-            value: 42,
-            description: "Set number value after 1 second delay",
-            delay: 1e3
-          }
-        ],
-        active: this.config.defaultJobsActive || false,
-        type: import_CronJobManager.CRON_JOB_TYPE.RECURRING
-      };
-      this.setState(exampleJobId, {
-        val: JSON.stringify(exampleConfig, null, 2),
-        ack: true
-      });
-      this.log.info(`Jobs folder created at: ${cronFolder}`);
-      this.log.info(`Example job created at: ${exampleJobId}`);
+          native: {}
+        });
+        const manualConfig = (0, import_examples.createExampleJobConfig)("manual", this.config.defaultJobsActive || false);
+        this.setState(exampleJobId, {
+          val: JSON.stringify(exampleConfig, null, 2),
+          ack: true
+        });
+        this.setState(manualJobId, {
+          val: JSON.stringify(manualConfig, null, 2),
+          ack: true
+        });
+        this.log.info(`Jobs folder created at: ${cronFolder}`);
+        this.log.info(`Example job created at: ${exampleJobId}`);
+        this.log.info(`Manual job example created at: ${manualJobId}`);
+      } else {
+        this.log.info(`Jobs folder created at: ${cronFolder}`);
+        this.log.info("Example jobs creation is disabled in adapter configuration");
+      }
     } catch (error) {
       this.log.error(`Error creating jobs folder: ${error}`);
     }
@@ -211,7 +210,7 @@ class CronScenes extends utils.Adapter {
       }
       const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
       if (id.startsWith(cronFolder) && !id.endsWith(".status") && !id.endsWith(".trigger")) {
-        this.cronJobManager.handleJobStateChange(id).catch((error) => {
+        this.cronJobManager.handleJobStateChange(id, state).catch((error) => {
           this.log.error(`Error handling job state change for ${id}: ${error}`);
         });
       }

@@ -14,6 +14,8 @@ declare global {
 			maxConcurrentJobs: number;
 			// Job timeout in seconds
 			jobTimeout: number;
+			// Create example jobs on adapter start
+			createExamples: boolean;
 		}
 	}
 }

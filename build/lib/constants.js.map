@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/lib/constants.ts"],
+  "sourcesContent": ["/**\n * Constants for cron job status and types\n */\nexport const CRON_JOB_STATUS = {\n\tSUCCESS: \"success\",\n\tERROR: \"error\",\n\tPENDING: \"pending\",\n} as const;\n\nexport const CRON_JOB_TYPE = {\n\tONCE: \"once\",\n\tRECURRING: \"recurring\",\n\tMANUAL: \"manual\",\n} as const;\n\nexport const CRON_TARGET_TYPE = {\n\tVALUE: \"value\",\n\tSTATE: \"state\",\n} as const;\n\nexport type CronJobStatusType = (typeof CRON_JOB_STATUS)[keyof typeof CRON_JOB_STATUS];\nexport type CronJobTypeType = (typeof CRON_JOB_TYPE)[keyof typeof CRON_JOB_TYPE];\nexport type CronTargetType = (typeof CRON_TARGET_TYPE)[keyof typeof CRON_TARGET_TYPE];\n\n/**\n * Custom error types for better error handling\n */\nexport const CRON_ERROR_CODE = {\n\tINVALID_CRON: \"INVALID_CRON\",\n\tTARGET_NOT_FOUND: \"TARGET_NOT_FOUND\",\n\tEXECUTION_FAILED: \"EXECUTION_FAILED\",\n\tCONFIG_INVALID: \"CONFIG_INVALID\",\n} as const;\n\nexport type CronErrorCode = (typeof CRON_ERROR_CODE)[keyof typeof CRON_ERROR_CODE];\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAGO,MAAM,kBAAkB;AAAA,EAC9B,SAAS;AAAA,EACT,OAAO;AAAA,EACP,SAAS;AACV;AAEO,MAAM,gBAAgB;AAAA,EAC5B,MAAM;AAAA,EACN,WAAW;AAAA,EACX,QAAQ;AACT;AAEO,MAAM,mBAAmB;AAAA,EAC/B,OAAO;AAAA,EACP,OAAO;AACR;AASO,MAAM,kBAAkB;AAAA,EAC9B,cAAc;AAAA,EACd,kBAAkB;AAAA,EAClB,kBAAkB;AAAA,EAClB,gBAAgB;AACjB;",
+  "names": []
+}

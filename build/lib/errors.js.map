@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/lib/errors.ts"],
+  "sourcesContent": ["import { CRON_ERROR_CODE, CronErrorCode } from \"./constants\";\n\nexport { CRON_ERROR_CODE };\n\nexport class CronJobError extends Error {\n\tconstructor(\n\t\tmessage: string,\n\t\tpublic readonly jobId: string,\n\t\tpublic readonly code: CronErrorCode,\n\t\tpublic readonly originalError?: Error,\n\t) {\n\t\tsuper(message);\n\t\tthis.name = \"CronJobError\";\n\t}\n}\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA,uBAA+C;AAIxC,MAAM,qBAAqB,MAAM;AAAA,EACvC,YACC,SACgB,OACA,MACA,eACf;AACD,UAAM,OAAO;AAJG;AACA;AACA;AAGhB,SAAK,OAAO;AAAA,EACb;AACD;",
+  "names": []
+}

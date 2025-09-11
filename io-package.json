@@ -128,8 +128,12 @@
 		]
 	},
 	"native": {
-		"option1": true,
-		"option2": "42"
+		"cronFolder": "cron_scenes.0.jobs",
+		"enableLogging": true,
+		"defaultJobsActive": false,
+		"maxConcurrentJobs": 5,
+		"jobTimeout": 30,
+		"createExamples": true
 	},
 	"objects": [],
 	"instanceObjects": []
