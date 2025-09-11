@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@iobroker/adapter-core": "^3.3.2",
-    "isolated-vm": "^6.0.1",
+		"isolated-vm": "4.7.2",
     "node-cron": "^4.2.1"
   },
   "devDependencies": {
