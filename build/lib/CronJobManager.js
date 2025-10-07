@@ -113,7 +113,15 @@ class CronJobManager {
           write: true,
           desc: "Set to true to manually trigger this job"
         },
-        native: {}
+        native: {},
+        acl: {
+          owner: "system.user.admin",
+          ownerGroup: "system.group.administrator",
+          object: 1638,
+          // rw-rw-rw- (alle können lesen und schreiben)
+          state: 1638
+          // rw-rw-rw- (alle können lesen und schreiben)
+        }
       });
       const statusId = jobId + ".status";
       await this.adapter.setObjectNotExistsAsync(statusId, {
@@ -126,7 +134,15 @@ class CronJobManager {
           write: false,
           desc: "Current status of this job"
         },
-        native: {}
+        native: {},
+        acl: {
+          owner: "system.user.admin",
+          ownerGroup: "system.group.administrator",
+          object: 1604,
+          // rw-r--r-- (Owner: read+write, alle anderen: read)
+          state: 1604
+          // rw-r--r-- (Owner: read+write, alle anderen: read)
+        }
       });
       await this.updateJobStatus(jobId, newJob.status);
     } catch (error) {

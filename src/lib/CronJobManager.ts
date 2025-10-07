@@ -110,6 +110,12 @@ export class CronJobManager {
 					desc: "Set to true to manually trigger this job",
 				},
 				native: {},
+				acl: {
+					owner: "system.user.admin",
+					ownerGroup: "system.group.administrator",
+					object: 0x666, // rw-rw-rw- (alle können lesen und schreiben)
+					state: 0x666, // rw-rw-rw- (alle können lesen und schreiben)
+				},
 			});
 
 			// Create status object if it doesn't exist
@@ -125,6 +131,12 @@ export class CronJobManager {
 					desc: "Current status of this job",
 				},
 				native: {},
+				acl: {
+					owner: "system.user.admin",
+					ownerGroup: "system.group.administrator",
+					object: 0x644, // rw-r--r-- (Owner: read+write, alle anderen: read)
+					state: 0x644, // rw-r--r-- (Owner: read+write, alle anderen: read)
+				},
 			});
 
 			// Update status
