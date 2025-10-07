@@ -58,5 +58,7 @@ export interface AdapterInterface {
 	getObjectAsync: (id: string) => any;
 	setObjectNotExistsAsync: (id: string, obj: any) => any;
 	setObjectAsync: (id: string, obj: any) => any;
+	delObjectAsync: (id: string) => any;
+	getObjectListAsync: (options: any) => any;
 	namespace: string;
 }

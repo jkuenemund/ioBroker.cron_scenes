@@ -186,7 +186,9 @@ class CronScenes extends utils.Adapter {
       this.log.debug(`object ${id} deleted`);
       const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
       if (id.startsWith(cronFolder)) {
-        this.cronJobManager.removeJob(id);
+        this.cronJobManager.removeJob(id).catch((error) => {
+          this.log.error(`Error cleaning up job ${id}: ${error}`);
+        });
       }
     }
   }
@@ -218,7 +220,9 @@ class CronScenes extends utils.Adapter {
       this.log.debug(`state ${id} deleted`);
       const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
       if (id.startsWith(cronFolder)) {
-        this.cronJobManager.removeJob(id);
+        this.cronJobManager.removeJob(id).catch((error) => {
+          this.log.error(`Error cleaning up job ${id}: ${error}`);
+        });
       }
     }
   }

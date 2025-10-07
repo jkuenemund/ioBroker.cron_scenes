@@ -45,18 +45,24 @@ class CronJobManager {
     this.adapter = adapter;
   }
   jobs = /* @__PURE__ */ new Map();
+  cleanupInterval = null;
   /**
    * Initialize the cron job manager
    */
   initialize() {
     this.adapter.log.info("CronJobManager: Initializing...");
     this.adapter.log.info("CronJobManager: Initialized (event-driven mode)");
+    this.startPeriodicCleanup();
   }
   /**
    * Shutdown the cron job manager
    */
   async shutdown() {
     this.adapter.log.info("CronJobManager: Shutting down...");
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
     for (const [jobId, job] of this.jobs) {
       if (job.task) {
         job.task.stop();
@@ -129,9 +135,9 @@ class CronJobManager {
     }
   }
   /**
-   * Remove a cron job
+   * Remove a cron job and clean up associated objects
    */
-  removeJob(jobId) {
+  async removeJob(jobId) {
     const job = this.jobs.get(jobId);
     if (job) {
       if (job.task) {
@@ -139,6 +145,22 @@ class CronJobManager {
       }
       this.jobs.delete(jobId);
       this.adapter.log.info(`CronJobManager: Removed job ${jobId}`);
+    }
+    await this.cleanupJobObjects(jobId);
+  }
+  /**
+   * Clean up status and trigger objects for a job
+   */
+  async cleanupJobObjects(jobId) {
+    try {
+      const statusId = jobId + ".status";
+      await this.adapter.delObjectAsync(statusId);
+      this.adapter.log.debug(`CronJobManager: Cleaned up status object ${statusId}`);
+      const triggerId = jobId + ".trigger";
+      await this.adapter.delObjectAsync(triggerId);
+      this.adapter.log.debug(`CronJobManager: Cleaned up trigger object ${triggerId}`);
+    } catch (error) {
+      this.adapter.log.warn(`CronJobManager: Error cleaning up objects for job ${jobId}: ${error}`);
     }
   }
   /**
@@ -351,6 +373,68 @@ class CronJobManager {
     } catch (error) {
       this.adapter.log.warn(`CronJobManager: Error calculating next run time for '${cronExpression}': ${error}`);
       return void 0;
+    }
+  }
+  /**
+   * Start periodic cleanup of orphaned objects
+   */
+  startPeriodicCleanup() {
+    this.cleanupInterval = setInterval(
+      async () => {
+        await this.cleanupOrphanedObjects();
+      },
+      5 * 60 * 1e3
+      // 5 minutes
+    );
+    this.adapter.log.debug("CronJobManager: Started periodic cleanup of orphaned objects");
+  }
+  /**
+   * Clean up orphaned status and trigger objects
+   */
+  async cleanupOrphanedObjects() {
+    try {
+      this.adapter.log.debug("CronJobManager: Starting cleanup of orphaned objects");
+      const objects = await this.adapter.getObjectListAsync({
+        startkey: this.adapter.namespace,
+        endkey: this.adapter.namespace + "\u9999"
+      });
+      const orphanedObjects = [];
+      for (const obj of objects.rows) {
+        const objId = obj.id;
+        if (objId.endsWith(".status") || objId.endsWith(".trigger")) {
+          const jobId = objId.replace(/\.(status|trigger)$/, "");
+          if (!this.jobs.has(jobId)) {
+            const jobStateExists = await this.checkJobStateExists(jobId);
+            if (!jobStateExists) {
+              orphanedObjects.push(objId);
+            }
+          }
+        }
+      }
+      for (const objId of orphanedObjects) {
+        try {
+          await this.adapter.delObjectAsync(objId);
+          this.adapter.log.info(`CronJobManager: Cleaned up orphaned object ${objId}`);
+        } catch (error) {
+          this.adapter.log.warn(`CronJobManager: Error removing orphaned object ${objId}: ${error}`);
+        }
+      }
+      if (orphanedObjects.length > 0) {
+        this.adapter.log.info(`CronJobManager: Cleaned up ${orphanedObjects.length} orphaned objects`);
+      }
+    } catch (error) {
+      this.adapter.log.error(`CronJobManager: Error during orphaned objects cleanup: ${error}`);
+    }
+  }
+  /**
+   * Check if a job state object exists
+   */
+  async checkJobStateExists(jobId) {
+    try {
+      const state = await this.adapter.getStateAsync(jobId);
+      return state !== null && state !== void 0;
+    } catch (error) {
+      return false;
     }
   }
 }

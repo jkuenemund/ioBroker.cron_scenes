@@ -13,6 +13,7 @@ export type { AdapterInterface, CronJobConfig, CronJobStatus, CronTarget, Regist
  */
 export class CronJobManager {
 	private jobs = new Map<string, RegisteredCronJob>();
+	private cleanupInterval: NodeJS.Timeout | null = null;
 
 	constructor(private adapter: AdapterInterface) {}
 
@@ -22,6 +23,9 @@ export class CronJobManager {
 	public initialize(): void {
 		this.adapter.log.info("CronJobManager: Initializing...");
 		this.adapter.log.info("CronJobManager: Initialized (event-driven mode)");
+
+		// Start periodic cleanup of orphaned objects
+		this.startPeriodicCleanup();
 	}
 
 	/**
@@ -29,6 +33,12 @@ export class CronJobManager {
 	 */
 	public async shutdown(): Promise<void> {
 		this.adapter.log.info("CronJobManager: Shutting down...");
+
+		// Stop cleanup interval
+		if (this.cleanupInterval) {
+			clearInterval(this.cleanupInterval);
+			this.cleanupInterval = null;
+		}
 
 		// Stop all running jobs
 		for (const [jobId, job] of this.jobs) {
@@ -126,9 +136,9 @@ export class CronJobManager {
 	}
 
 	/**
-	 * Remove a cron job
+	 * Remove a cron job and clean up associated objects
 	 */
-	public removeJob(jobId: string): void {
+	public async removeJob(jobId: string): Promise<void> {
 		const job = this.jobs.get(jobId);
 		if (job) {
 			if (job.task) {
@@ -136,6 +146,28 @@ export class CronJobManager {
 			}
 			this.jobs.delete(jobId);
 			this.adapter.log.info(`CronJobManager: Removed job ${jobId}`);
+		}
+
+		// Clean up associated status and trigger objects
+		await this.cleanupJobObjects(jobId);
+	}
+
+	/**
+	 * Clean up status and trigger objects for a job
+	 */
+	private async cleanupJobObjects(jobId: string): Promise<void> {
+		try {
+			// Remove status object
+			const statusId = jobId + ".status";
+			await this.adapter.delObjectAsync(statusId);
+			this.adapter.log.debug(`CronJobManager: Cleaned up status object ${statusId}`);
+
+			// Remove trigger object
+			const triggerId = jobId + ".trigger";
+			await this.adapter.delObjectAsync(triggerId);
+			this.adapter.log.debug(`CronJobManager: Cleaned up trigger object ${triggerId}`);
+		} catch (error) {
+			this.adapter.log.warn(`CronJobManager: Error cleaning up objects for job ${jobId}: ${error}`);
 		}
 	}
 
@@ -402,6 +434,86 @@ export class CronJobManager {
 		} catch (error) {
 			this.adapter.log.warn(`CronJobManager: Error calculating next run time for '${cronExpression}': ${error}`);
 			return undefined;
+		}
+	}
+
+	/**
+	 * Start periodic cleanup of orphaned objects
+	 */
+	private startPeriodicCleanup(): void {
+		// Run cleanup every 5 minutes
+		this.cleanupInterval = setInterval(
+			async () => {
+				await this.cleanupOrphanedObjects();
+			},
+			5 * 60 * 1000, // 5 minutes
+		);
+
+		this.adapter.log.debug("CronJobManager: Started periodic cleanup of orphaned objects");
+	}
+
+	/**
+	 * Clean up orphaned status and trigger objects
+	 */
+	private async cleanupOrphanedObjects(): Promise<void> {
+		try {
+			this.adapter.log.debug("CronJobManager: Starting cleanup of orphaned objects");
+
+			// Get all objects in the adapter namespace
+			const objects = await this.adapter.getObjectListAsync({
+				startkey: this.adapter.namespace,
+				endkey: this.adapter.namespace + "\u9999",
+			});
+
+			const orphanedObjects: string[] = [];
+
+			// Check for orphaned status and trigger objects
+			for (const obj of objects.rows) {
+				const objId = obj.id;
+
+				// Check if this is a status or trigger object
+				if (objId.endsWith(".status") || objId.endsWith(".trigger")) {
+					// Extract the job ID by removing the suffix
+					const jobId = objId.replace(/\.(status|trigger)$/, "");
+
+					// Check if the corresponding job exists
+					if (!this.jobs.has(jobId)) {
+						// Check if the job state object exists
+						const jobStateExists = await this.checkJobStateExists(jobId);
+						if (!jobStateExists) {
+							orphanedObjects.push(objId);
+						}
+					}
+				}
+			}
+
+			// Remove orphaned objects
+			for (const objId of orphanedObjects) {
+				try {
+					await this.adapter.delObjectAsync(objId);
+					this.adapter.log.info(`CronJobManager: Cleaned up orphaned object ${objId}`);
+				} catch (error) {
+					this.adapter.log.warn(`CronJobManager: Error removing orphaned object ${objId}: ${error}`);
+				}
+			}
+
+			if (orphanedObjects.length > 0) {
+				this.adapter.log.info(`CronJobManager: Cleaned up ${orphanedObjects.length} orphaned objects`);
+			}
+		} catch (error) {
+			this.adapter.log.error(`CronJobManager: Error during orphaned objects cleanup: ${error}`);
+		}
+	}
+
+	/**
+	 * Check if a job state object exists
+	 */
+	private async checkJobStateExists(jobId: string): Promise<boolean> {
+		try {
+			const state = await this.adapter.getStateAsync(jobId);
+			return state !== null && state !== undefined;
+		} catch (error) {
+			return false;
 		}
 	}
 }
