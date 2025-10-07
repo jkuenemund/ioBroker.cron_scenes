@@ -1,140 +1,157 @@
 {
-	"common": {
-		"name": "cron_scenes",
-		"version": "0.1.1",
-		"news": {
-			"0.1.1": {
-				"en": "Added optional delay functionality for targets",
-				"de": "Optionale Delay-Funktionalität für Targets hinzugefügt",
-				"ru": "Добавлена опциональная функция задержки для целей",
-				"pt": "Adicionada funcionalidade de atraso opcional para alvos",
-				"nl": "Optionele vertraging functionaliteit toegevoegd voor doelen",
-				"fr": "Fonctionnalité de délai optionnel ajoutée pour les cibles",
-				"it": "Aggiunta funzionalità di ritardo opzionale per i target",
-				"es": "Agregada funcionalidad de retraso opcional para objetivos",
-				"pl": "Dodano opcjonalną funkcję opóźnienia dla celów",
-				"uk": "Додано опціональну функцію затримки для цілей",
-				"zh-cn": "为目标添加了可选延迟功能"
-			},
-			"0.1.0": {
-				"en": "Removed expression engine - stable version with value and state targets only",
-				"de": "Expression-Engine entfernt - stabile Version nur mit value und state Targets",
-				"ru": "Удален движок выражений - стабильная версия только с целями value и state",
-				"pt": "Mecanismo de expressões removido - versão estável apenas com alvos value e state",
-				"nl": "Expression engine verwijderd - stabiele versie met alleen value en state doelen",
-				"fr": "Moteur d'expressions supprimé - version stable avec seulement les cibles value et state",
-				"it": "Rimosso motore espressioni - versione stabile solo con target value e state",
-				"es": "Motor de expresiones eliminado - versión estable solo con objetivos value y state",
-				"pl": "Usunięto silnik wyrażeń - stabilna wersja tylko z celami value i state",
-				"uk": "Видалено движок виразів - стабільна версія лише з цілями value та state",
-				"zh-cn": "移除表达式引擎 - 仅包含value和state目标的稳定版本"
-			},
-			"0.0.3": {
-				"en": "Temporarily disabled isolated-vm due to SIGSEGV crashes on ARM64",
-				"de": "Isolated-vm temporär deaktiviert wegen SIGSEGV-Abstürzen auf ARM64",
-				"ru": "Временно отключен isolated-vm из-за сбоев SIGSEGV на ARM64",
-				"pt": "Isolated-vm temporariamente desabilitado devido a crashes SIGSEGV no ARM64",
-				"nl": "Isolated-vm tijdelijk uitgeschakeld vanwege SIGSEGV crashes op ARM64",
-				"fr": "Isolated-vm temporairement désactivé en raison de plantages SIGSEGV sur ARM64",
-				"it": "Isolated-vm temporaneamente disabilitato a causa di crash SIGSEGV su ARM64",
-				"es": "Isolated-vm deshabilitado temporalmente debido a crashes SIGSEGV en ARM64",
-				"pl": "Isolated-vm tymczasowo wyłączony z powodu awarii SIGSEGV na ARM64",
-				"uk": "Isolated-vm тимчасово відключений через збої SIGSEGV на ARM64",
-				"zh-cn": "由于ARM64上的SIGSEGV崩溃，暂时禁用isolated-vm"
-			},
-			"0.0.2": {
-				"en": "Fixed admin dependency version constraint",
-				"de": "Admin-Abhängigkeits-Versionsbeschränkung behoben",
-				"ru": "Исправлено ограничение версии зависимости admin",
-				"pt": "Corrigida restrição de versão de dependência do admin",
-				"nl": "Admin afhankelijkheidsversie beperking opgelost",
-				"fr": "Contrainte de version de dépendance admin corrigée",
-				"it": "Risolto vincolo versione dipendenza admin",
-				"es": "Restricción de versión de dependencia de administrador corregida",
-				"pl": "Naprawiono ograniczenie wersji zależności admin",
-				"uk": "Виправлено обмеження версії залежності admin",
-				"zh-cn": "修复了管理依赖版本约束"
-			},
-			"0.0.1": {
-				"en": "initial release",
-				"de": "Erstveröffentlichung",
-				"ru": "Начальная версия",
-				"pt": "lançamento inicial",
-				"nl": "Eerste uitgave",
-				"fr": "Première version",
-				"it": "Versione iniziale",
-				"es": "Versión inicial",
-				"pl": "Pierwsze wydanie",
-				"uk": "Початкова версія",
-				"zh-cn": "首次出版"
-			}
-		},
-		"titleLang": {
-			"en": "cron_scenes",
-			"de": "cron_scenes",
-			"ru": "cron_scenes",
-			"pt": "CRON_SCENES",
-			"nl": "cron_scenes",
-			"fr": "cron_scenes",
-			"it": "cron_scenes",
-			"es": "cron_scenes",
-			"pl": "cron_ssenes",
-			"uk": "cron_scenes",
-			"zh-cn": "cron_scenes"
-		},
-		"desc": {
-			"en": "cron_scenes",
-			"de": "cron_scenes",
-			"ru": "cron_scenes",
-			"pt": "CRON_SCENES",
-			"nl": "cron_scenes",
-			"fr": "cron_scenes",
-			"it": "cron_scenes",
-			"es": "cron_scenes",
-			"pl": "cron_ssenes",
-			"uk": "cron_scenes",
-			"zh-cn": "cron_scenes"
-		},
-		"authors": ["kuen_je <jens.kuenemund@gmx.de>"],
-		"keywords": ["cronjob"],
-		"licenseInformation": {
-			"type": "free",
-			"license": "Unlicense"
-		},
-		"platform": "Javascript/Node.js",
-		"icon": "cron_scenes.png",
-		"enabled": true,
-		"extIcon": "https://raw.githubusercontent.com/jkuenemund/ioBroker.cron_scenes/main/admin/cron_scenes.png",
-		"readme": "https://github.com/jkuenemund/ioBroker.cron_scenes/blob/main/README.md",
-		"loglevel": "info",
-		"tier": 3,
-		"mode": "daemon",
-		"type": "date-and-time",
-		"compact": true,
-		"connectionType": "local",
-		"dataSource": "poll",
-		"adminUI": {
-			"config": "materialize"
-		},
-		"dependencies": [
-			{
-				"js-controller": ">=6.0.11"
-			}
-		],
-		"globalDependencies": [
-			{
-				"admin": ">=7.0.0"
-			}
-		]
-	},
-	"native": {
-		"cronFolder": "cron_scenes.0.jobs",
-		"enableLogging": true,
-		"defaultJobsActive": false,
-		"maxConcurrentJobs": 5,
-		"jobTimeout": 30,
-		"createExamples": true
-	},
-	"objects": [],
-	"instanceObjects": []
+  "common": {
+    "name": "cron_scenes",
+    "version": "0.2.0",
+    "news": {
+      "0.2.0": {
+        "en": "initial release\nAdded automatic jobs folder creation\nAdded example job configuration\nAdded comprehensive user documentation\nImplemented cron job manager with multi-target support\nAdded manual trigger functionality for each job\nAdded job status monitoring and error handling\nEnhanced target configuration with type system (value, state, expression)\nImplemented state reference functionality for dynamic values\nAdded powerful JavaScript expression engine with isolated-vm sandbox\nImplemented toggle functionality and complex logic support in expressions\nAdded comprehensive admin interface with configuration options\nImproved event-driven architecture for better performance",
+        "de": "erstausstrahlung\nHinzugefügt automatische Jobs Ordner Erstellung\nHinzufügen von Beispiel Job-Konfiguration\nUmfassende Benutzerdokumentation\nImplementiert Cron Job Manager mit Multi-Ziel-Unterstützung\nManuelle Trigger-Funktionalität für jeden Job hinzugefügt\nHinzugefügt Arbeitsplatzstatusüberwachung und Fehlerbehandlung\nVerbesserte Zielkonfiguration mit Typsystem (Wert, Zustand, Ausdruck)\nErgänzte Zustandsreferenzfunktionalität für dynamische Werte\nZusätzlich mächtig JavaScript-Expressionsmotor mit isoliertem vm Sandkasten\nImplementierung von Toggle-Funktionalität und komplexer Logikunterstützung in Ausdrücken\nKomplette Admin-Schnittstelle mit Konfigurationsoptionen hinzugefügt\nVerbesserte ereignisgesteuerte Architektur für bessere Leistung",
+        "ru": "первоначальное освобождение\nДобавлена автоматическая папка создания рабочих мест\nДобавлен пример конфигурации работы\nДобавлена полная пользовательская документация\nВнедренный менеджер по работе cron с многоцелевой поддержкой\nДобавлена функция ручного триггера для каждой работы\nДобавлен мониторинг статуса работы и обработка ошибок\nУлучшенная конфигурация цели с системой типов (значение, состояние, выражение)\nРеализована функциональность ссылочных состояний для динамических значений\nДобавлен мощный JavaScript-движок с изолированной vm-песочницей\nРеализована функция переключения и сложная логическая поддержка в выражениях\nДобавлен комплексный интерфейс администратора с опциями конфигурации\nУлучшенная событийная архитектура для лучшей производительности",
+        "pt": "libertação inicial\nCriação automática de pastas de tarefas\nConfiguração da tarefa de exemplo adicionada\nAdicionada documentação abrangente do usuário\nGestor de tarefas cron implementado com suporte multi-alvo\nAdicionada funcionalidade manual de gatilho para cada tarefa\nMonitoramento do status do trabalho adicionado e manipulação de erros\nConfiguração de destino melhorada com sistema de tipo (valor, estado, expressão)\nFuncionalidade de referência de estado implementada para valores dinâmicos\nAdicionado poderoso Motor de expressão JavaScript com caixa de areia isolada-vm\nFuncionalidade implementada e suporte lógico complexo em expressões\nAdicionado interface de administração abrangente com opções de configuração\nArquitetura orientada para eventos melhorada para melhor desempenho",
+        "nl": "eerste release\nAutomatisch aanmaken van takenmap toegevoegd\nVoorbeeldtaakconfiguratie toegevoegd\nToegevoegd uitgebreide gebruikersdocumentatie\nImplementeerde cron job manager met multi-target ondersteuning\nToegevoegd handmatige trigger functionaliteit voor elke taak\nToegevoegd taakstatus monitoring en foutafhandeling\nVerbeterde doelconfiguratie met typesysteem (waarde, toestand, expressie)\nGeïmplementeerde statusreferentiefunctionaliteit voor dynamische waarden\nKrachtig toegevoegd JavaScript expressie-engine met geïsoleerde-vm sandbox\nGeïmplementeerde toggle functionaliteit en complexe logische ondersteuning in expressies\nUitgebreide admin interface met configuratie-opties toegevoegd\nVerbeterde event-gedreven architectuur voor betere prestaties",
+        "fr": "libération initiale\nAjout de création automatique de dossiers d'emplois\nAjout d'un exemple de configuration d'emploi\nAjout d'une documentation utilisateur complète\nGestionnaire d'emplois Cron mis en œuvre avec un soutien multi-cible\nAjout de la fonctionnalité manuelle de déclenchement pour chaque tâche\nSuivi de l'état de l'emploi et traitement des erreurs\nConfiguration de cible améliorée avec système de type (valeur, état, expression)\nFonction de référence d'état appliquée pour les valeurs dynamiques\nAjouté puissant Moteur d'expression JavaScript avec bac à sable VM isolé\nImplémenté la fonctionnalité et le support logique complexe dans les expressions\nAjout d'une interface admin complète avec des options de configuration\nUne architecture améliorée axée sur les événements pour une meilleure performance",
+        "it": "rilascio iniziale\nCreazione automatica di cartelle di lavoro\nConfigurazione del lavoro di esempio\nDocumentazione utente completa aggiunta\nImplementato cron job manager con supporto multi-target\nAggiunta funzionalità di trigger manuale per ogni lavoro\nAggiunto monitoraggio dello stato di lavoro e gestione degli errori\nConfigurazione di destinazione migliorata con sistema di tipo (valore, stato, espressione)\nFunzionalità di riferimento dello stato implementato per valori dinamici\nAggiunto potente Motore di espressione JavaScript con sandbox isolato-vm\nAttiva funzionalità e supporto logico complesso nelle espressioni\nAggiunta completa interfaccia di amministrazione con le opzioni di configurazione\nArchitettura orientata agli eventi migliorata per prestazioni migliori",
+        "es": "liberación inicial\nCreación de carpetas de trabajo automático\nConfiguración de trabajo de ejemplo\nDocumentación de usuario completa\nGestor de empleo de cron implementado con soporte multiobjetivo\nFunción de activación manual adicional para cada trabajo\nSeguimiento del estado de trabajo y manejo de errores\nConfiguración de destino mejorada con sistema de tipo (valor, estado, expresión)\nFunción de referencia estatal aplicada para valores dinámicos\nAñadido poderoso Motor de expresión JavaScript con caja de arena aislada-vm\nFuncionalidad aplicada y soporte lógico complejo en expresiones\nInterfaz de administración completa con opciones de configuración\nMejora de la arquitectura basada en eventos para un mejor rendimiento",
+        "pl": "początkowe zwolnienie\nDodano automatyczne tworzenie folderów zadań\nDodano przykładową konfigurację zadania\nDodano wyczerpującą dokumentację użytkownika\nZaimplementowany menedżer zadań cron z wielozadaniowym wsparciem\nDodano funkcję ręcznego uruchamiania dla każdego zadania\nDodano monitorowanie statusu pracy i obsługę błędów\nWzmocniona konfiguracja docelowa z systemem typu (wartość, stan, wyrażenie)\nWdrożona funkcja referencyjna państwa dla wartości dynamicznych\nDodano potężny Silnik ekspresji JavaScript z izolowaną skrzynką z piaskiem\nWdrożona funkcjonalność przełączania i kompleksowe wsparcie logiki w wyrażeniach\nDodano kompleksowy interfejs admin z opcjami konfiguracji\nUlepszona architektura oparta na eventach dla lepszej wydajności",
+        "uk": "початковий реліз\nДодано створення автоматичного створення папки робочих місць\nДодано приклад конфігурації роботи\nДодано комплексну документацію користувача\nВпроваджений менеджер роботи з підтримкою багатотаргету\nДодано ручну функцію запуску для кожної роботи\nДодано контроль стану роботи та обробка помилок\nРозширена цільова конфігурація з системою типу (значення, стан, експресія)\nРеалізовано функціональність державного посилання для динамічних значень\nДодати потужний JavaScript-виразковий двигун з ізольованою пісочницею\nВпровадження функціональності та комплексної логічної підтримки у виразах\nДодано комплексний інтерфейс адміністратора з опціями конфігурації\nПокращена архітектура подій для кращої продуктивності",
+        "zh-cn": "初步释放\n添加自动工作文件夹创建\n添加示例任务配置\n添加全面的用户文档\n在多目标支助下,已执行克龙工作经理\n为每个任务添加手动触发功能\n新增工作状态监测和错误处理\n具有类型系统(价值、状态、表达式)的增强目标配置\n已执行的动态值的状态参考功能\n添加强力 JavaScript 表达式引擎, 带有孤立的 vm 沙盒\n在表达式中切换功能和复杂逻辑支持\n添加配置选项的全面管理界面\n改进事件驱动架构,以改善业绩"
+      },
+      "0.1.1": {
+        "en": "Added optional delay functionality for targets",
+        "de": "Optionale Delay-Funktionalität für Targets hinzugefügt",
+        "ru": "Добавлена опциональная функция задержки для целей",
+        "pt": "Adicionada funcionalidade de atraso opcional para alvos",
+        "nl": "Optionele vertraging functionaliteit toegevoegd voor doelen",
+        "fr": "Fonctionnalité de délai optionnel ajoutée pour les cibles",
+        "it": "Aggiunta funzionalità di ritardo opzionale per i target",
+        "es": "Agregada funcionalidad de retraso opcional para objetivos",
+        "pl": "Dodano opcjonalną funkcję opóźnienia dla celów",
+        "uk": "Додано опціональну функцію затримки для цілей",
+        "zh-cn": "为目标添加了可选延迟功能"
+      },
+      "0.1.0": {
+        "en": "Removed expression engine - stable version with value and state targets only",
+        "de": "Expression-Engine entfernt - stabile Version nur mit value und state Targets",
+        "ru": "Удален движок выражений - стабильная версия только с целями value и state",
+        "pt": "Mecanismo de expressões removido - versão estável apenas com alvos value e state",
+        "nl": "Expression engine verwijderd - stabiele versie met alleen value en state doelen",
+        "fr": "Moteur d'expressions supprimé - version stable avec seulement les cibles value et state",
+        "it": "Rimosso motore espressioni - versione stabile solo con target value e state",
+        "es": "Motor de expresiones eliminado - versión estable solo con objetivos value y state",
+        "pl": "Usunięto silnik wyrażeń - stabilna wersja tylko z celami value i state",
+        "uk": "Видалено движок виразів - стабільна версія лише з цілями value та state",
+        "zh-cn": "移除表达式引擎 - 仅包含value和state目标的稳定版本"
+      },
+      "0.0.3": {
+        "en": "Temporarily disabled isolated-vm due to SIGSEGV crashes on ARM64",
+        "de": "Isolated-vm temporär deaktiviert wegen SIGSEGV-Abstürzen auf ARM64",
+        "ru": "Временно отключен isolated-vm из-за сбоев SIGSEGV на ARM64",
+        "pt": "Isolated-vm temporariamente desabilitado devido a crashes SIGSEGV no ARM64",
+        "nl": "Isolated-vm tijdelijk uitgeschakeld vanwege SIGSEGV crashes op ARM64",
+        "fr": "Isolated-vm temporairement désactivé en raison de plantages SIGSEGV sur ARM64",
+        "it": "Isolated-vm temporaneamente disabilitato a causa di crash SIGSEGV su ARM64",
+        "es": "Isolated-vm deshabilitado temporalmente debido a crashes SIGSEGV en ARM64",
+        "pl": "Isolated-vm tymczasowo wyłączony z powodu awarii SIGSEGV na ARM64",
+        "uk": "Isolated-vm тимчасово відключений через збої SIGSEGV на ARM64",
+        "zh-cn": "由于ARM64上的SIGSEGV崩溃，暂时禁用isolated-vm"
+      },
+      "0.0.2": {
+        "en": "Fixed admin dependency version constraint",
+        "de": "Admin-Abhängigkeits-Versionsbeschränkung behoben",
+        "ru": "Исправлено ограничение версии зависимости admin",
+        "pt": "Corrigida restrição de versão de dependência do admin",
+        "nl": "Admin afhankelijkheidsversie beperking opgelost",
+        "fr": "Contrainte de version de dépendance admin corrigée",
+        "it": "Risolto vincolo versione dipendenza admin",
+        "es": "Restricción de versión de dependencia de administrador corregida",
+        "pl": "Naprawiono ograniczenie wersji zależności admin",
+        "uk": "Виправлено обмеження версії залежності admin",
+        "zh-cn": "修复了管理依赖版本约束"
+      },
+      "0.0.1": {
+        "en": "initial release",
+        "de": "Erstveröffentlichung",
+        "ru": "Начальная версия",
+        "pt": "lançamento inicial",
+        "nl": "Eerste uitgave",
+        "fr": "Première version",
+        "it": "Versione iniziale",
+        "es": "Versión inicial",
+        "pl": "Pierwsze wydanie",
+        "uk": "Початкова версія",
+        "zh-cn": "首次出版"
+      }
+    },
+    "titleLang": {
+      "en": "cron_scenes",
+      "de": "cron_scenes",
+      "ru": "cron_scenes",
+      "pt": "CRON_SCENES",
+      "nl": "cron_scenes",
+      "fr": "cron_scenes",
+      "it": "cron_scenes",
+      "es": "cron_scenes",
+      "pl": "cron_ssenes",
+      "uk": "cron_scenes",
+      "zh-cn": "cron_scenes"
+    },
+    "desc": {
+      "en": "cron_scenes",
+      "de": "cron_scenes",
+      "ru": "cron_scenes",
+      "pt": "CRON_SCENES",
+      "nl": "cron_scenes",
+      "fr": "cron_scenes",
+      "it": "cron_scenes",
+      "es": "cron_scenes",
+      "pl": "cron_ssenes",
+      "uk": "cron_scenes",
+      "zh-cn": "cron_scenes"
+    },
+    "authors": [
+      "kuen_je <jens.kuenemund@gmx.de>"
+    ],
+    "keywords": [
+      "cronjob"
+    ],
+    "licenseInformation": {
+      "type": "free",
+      "license": "Unlicense"
+    },
+    "platform": "Javascript/Node.js",
+    "icon": "cron_scenes.png",
+    "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/jkuenemund/ioBroker.cron_scenes/main/admin/cron_scenes.png",
+    "readme": "https://github.com/jkuenemund/ioBroker.cron_scenes/blob/main/README.md",
+    "loglevel": "info",
+    "tier": 3,
+    "mode": "daemon",
+    "type": "date-and-time",
+    "compact": true,
+    "connectionType": "local",
+    "dataSource": "poll",
+    "adminUI": {
+      "config": "materialize"
+    },
+    "dependencies": [
+      {
+        "js-controller": ">=6.0.11"
+      }
+    ],
+    "globalDependencies": [
+      {
+        "admin": ">=7.0.0"
+      }
+    ]
+  },
+  "native": {
+    "cronFolder": "cron_scenes.0.jobs",
+    "enableLogging": true,
+    "defaultJobsActive": false,
+    "maxConcurrentJobs": 5,
+    "jobTimeout": 30,
+    "createExamples": true
+  },
+  "objects": [],
+  "instanceObjects": []
 }

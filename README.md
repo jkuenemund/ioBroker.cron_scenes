@@ -582,8 +582,7 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 	Placeholder for the next version (at the beginning of the line):
 	### **WORK IN PROGRESS**
 -->
-
-### **WORK IN PROGRESS**
+### 0.2.0 (2025-10-07)
 
 - (kuen_je) initial release
 - (kuen_je) Added automatic jobs folder creation
