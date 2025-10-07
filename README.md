@@ -578,10 +578,20 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 
+### **WORK IN PROGRESS**
+
+- (kuen_je) Added ACL permissions for trigger objects (0x666) to allow REST-API users to trigger jobs
+- (kuen_je) Added ACL permissions for status objects (0x644) to allow all users to read job status
+- (kuen_je) Implemented automatic cleanup of orphaned status and trigger objects when job states are deleted
+- (kuen_je) Added periodic cleanup mechanism (every 5 minutes) to remove orphaned objects
+- (kuen_je) Enhanced removeJob() method to automatically clean up associated objects
+- (kuen_je) Fixed trigger permissions issue for REST-API users
+
 <!--
 	Placeholder for the next version (at the beginning of the line):
 	### **WORK IN PROGRESS**
 -->
+
 ### 0.2.0 (2025-10-07)
 
 - (kuen_je) initial release
