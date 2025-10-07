@@ -577,8 +577,7 @@ The ioBroker.admin interface will then be available at http://localhost:8181/
 Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev-server#command-line) for more details.
 
 ## Changelog
-
-### **WORK IN PROGRESS**
+### 0.3.0 (2025-10-07)
 
 - (kuen_je) Added ACL permissions for trigger objects (0x666) to allow REST-API users to trigger jobs
 - (kuen_je) Added ACL permissions for status objects (0x644) to allow all users to read job status
