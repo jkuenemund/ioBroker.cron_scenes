@@ -1,170 +1,170 @@
 {
-  "common": {
-    "name": "cron_scenes",
-    "version": "0.3.0",
-    "news": {
-      "0.3.0": {
-        "en": "* Added ACL permissions for trigger objects (0x666) to allow REST-API users to trigger jobs\n* Added ACL permissions for status objects (0x644) to allow all users to read job status\n* Implemented automatic cleanup of orphaned status and trigger objects when job states are deleted\n* Added periodic cleanup mechanism (every 5 minutes) to remove orphaned objects\n* Enhanced removeJob() method to automatically clean up associated objects\n* Fixed trigger permissions issue for REST-API users\n\n<!--\n\tPlaceholder for the next version (at the beginning of the line):\n\t### **WORK IN PROGRESS**\n-->",
-        "de": "* Hinzugefügt ACL-Berechtigungen für Trigger-Objekte (0x666), damit REST-API-Benutzer Jobs auslösen können\n* ACL-Berechtigungen für Statusobjekte (0x644) hinzugefügt, damit alle Benutzer den Jobstatus lesen können\n* Ergänzte automatische Säuberung des verwaisten Status und Trigger Objekte, wenn Arbeitszustände gelöscht werden\n* Hinzugefügt periodische Aufräummechanismus (alle 5 Minuten), um verwaiste Objekte zu entfernen\n* Enhanced removeJob() Methode zur automatischen Reinigung von zugehörigen Objekten\n* Fehlerberechtigungen für REST-API-Benutzer behoben\n\n<!--\nPlatzhalter für die nächste Version (am Anfang der Linie):\n**WORK IN PROGRESS**\n-->",
-        "ru": "Добавлены разрешения ACL для триггерных объектов (0x666), позволяющие пользователям REST-API запускать рабочие места\nДобавлены разрешения ACL для объектов статуса (0x644), позволяющие всем пользователям читать статус работы\nВнедрение автоматической очистки статуса сирот и запуска объектов при удалении состояний работы\nДобавлен механизм периодической очистки (каждые 5 минут) для удаления осиротевших предметов\n• Усовершенствованный метод удаления Job() для автоматической очистки связанных объектов\n* Выдача разрешений на запуск для пользователей REST-API\n\n<!--\nЗаполнитель для следующей версии (в начале строки):\n###*РАБОТА В ПРОГРЕСЕ**\n-->",
-        "pt": "* Adicionadas permissões ACL para objetos gatilhos (0x666) para permitir que os usuários REST-API ativem tarefas\n* Adicionadas permissões ACL para objetos de status (0x644) para permitir que todos os usuários leiam status de trabalho\n* Limpeza automática implementada do status órfão e ativar objetos quando os estados de trabalho são excluídos\n* Adicionado mecanismo de limpeza periódica (a cada 5 minutos) para remover objetos órfãos\n* Método RemoveJob() melhorado para limpar automaticamente objetos associados\n* Problema de permissões de disparo fixas para usuários REST-API\n\n<!--\nPositivo para a próxima versão (no início da linha):\nTRABALHAR EM PROGRESSO\n-->",
-        "nl": "* Toegevoegd ACL permissies voor trigger objecten (0x666) om REST-API gebruikers in staat te stellen taken te activeren\n* Toegevoegd ACL permissies voor status objecten (0x644) om alle gebruikers de taakstatus te laten lezen\n* Geïmplementeerde automatische opruiming van weesstatus en trigger objecten wanneer werkstaten worden verwijderd\n* Toegevoegd periodiek schoonmaakmechanisme (elke 5 minuten) om weesobjecten te verwijderen\n* Enhanced removeJob() methode om de bijbehorende objecten automatisch op te ruimen\n* Vaste trigger permissies probleem voor REST-API gebruikers\n\n<!--\nPlaatshouder voor de volgende versie (aan het begin van de regel):\nWORK IN PROGRESS\n-->",
-        "fr": "* Ajout des autorisations ACL pour les objets déclencheurs (0x666) pour permettre aux utilisateurs REST-API de déclencher des tâches\n* Ajout des autorisations ACL pour les objets d'état (0x644) pour permettre à tous les utilisateurs de lire l'état d'emploi\n* Nettoyer automatiquement les objets orphelins et les objets déclencheurs lorsque les états de travail sont supprimés\n* Ajout d'un mécanisme de nettoyage périodique (toutes les 5 minutes) pour enlever les objets orphelins\n* Méthode améliorée removeJob() pour nettoyer automatiquement les objets associés\n* Problème d'autorisation de déclenchement corrigé pour les utilisateurs REST-API\n\n<!--\nPlaceholder pour la prochaine version (au début de la ligne):\n### **WORK IN PROGRESS**\n-->",
-        "it": "* Aggiunto autorizzazioni ACL per gli oggetti di trigger (0x666) per consentire agli utenti REST-API di attivare i lavori\n* Aggiunto autorizzazioni ACL per oggetti di stato (0x644) per consentire a tutti gli utenti di leggere lo stato del lavoro\n* Pulitura automatica semplificata dello stato orfano e degli oggetti di trigger quando gli stati di lavoro vengono eliminati\n* Aggiunto meccanismo di pulizia periodica (ogni 5 minuti) per rimuovere gli oggetti orfani\n* Metodo Enhanced removeJob() per pulire automaticamente gli oggetti associati\n* Emissione di permessi di trigger fissi per gli utenti REST-API\n\n<!--\nSegnaposto per la prossima versione (all'inizio della linea):\n######WORK IN PROGRESS #\n-->",
-        "es": "* Los permisos ACL añadidos para activar objetos (0x666) para permitir que los usuarios REST-API desencadenen empleos\n* Los permisos ACL añadidos para objetos de estado (0x644) para permitir a todos los usuarios leer el estado de trabajo\n* Limpieza automática aplicada del estado huérfano y los objetos desencadenantes cuando se eliminan los estados de trabajo\n* Mecanismo de limpieza periódica adicional (cada 5 minutos) para eliminar objetos huérfanos\n* Método de eliminación mejoradaJob() para limpiar automáticamente los objetos asociados\n* Número de permisos de activación fijos para los usuarios de REST-API\n\n<!--\nTitular para la próxima versión (al principio de la línea):\n#### **WORK IN PROGRESS**\n-->",
-        "pl": "* Dodano uprawnienia ACL dla obiektów wyzwalających (0x666), aby umożliwić użytkownikom REST- API uruchomienie zadań\n* Dodano uprawnienia ACL dla obiektów stanu (0x644), aby umożliwić wszystkim użytkownikom odczytanie statusu zadania\n* Wdrożenie automatycznego czyszczenia osieroconego statusu i obiektów wyzwalających, gdy stan zadania zostanie usunięty\n* Dodano okresowy mechanizm oczyszczania (co 5 minut), aby usunąć osierocone obiekty\n* Wzmocniona metoda usuwania joba () do automatycznego czyszczenia powiązanych obiektów\n* Naprawiono problem uprawnień wyzwalających dla użytkowników REST- API\n\n<!--\nUchwyt do następnej wersji (na początku wiersza):\n** * WORK IN PROGRESS **\n-->",
-        "uk": "* Додано ACL дозволи на тригерні об'єкти (0x666) щоб дозволити користувачам REST-API викликати робочі місця\n* Додано ACL дозволи на статус об'єктів (0x644), щоб дозволити всім користувачам читати статус роботи\n* Реалізовано автоматичне очищення дітей-сирітного статусу та тригерних об'єктів при видаленні робочих органів\n* Додано періодичний механізм очищення (всі 5 хвилин) для видалення дитячих будинків\n* Покращений метод removeJob() для автоматичного очищення пов'язаних об'єктів\n* Видача дозволів для користувачів REST-API\n\n<!--\nМісцевласника для наступної версії (на початку лінії):\n###**\n-->",
-        "zh-cn": "* 添加触发对象的ACL权限( 0x666) 允许 REST- API 用户触发任务\n* 添加状态对象的ACL权限( 0x644) , 允许所有用户读取工作状态\n* 取消工作状态时自动清理孤儿身份和触发对象\n* 增加定期清理机制(每5分钟一次)以清除孤儿物品\n* 强化去除Job()方法,以自动清理相关对象\n* 为REST-API用户发放固定触发权限\n\n<!--\n下一个版本(行首)的占位符 :\n** 工作进展**\n-->"
-      },
-      "0.2.0": {
-        "en": "initial release\nAdded automatic jobs folder creation\nAdded example job configuration\nAdded comprehensive user documentation\nImplemented cron job manager with multi-target support\nAdded manual trigger functionality for each job\nAdded job status monitoring and error handling\nEnhanced target configuration with type system (value, state, expression)\nImplemented state reference functionality for dynamic values\nAdded powerful JavaScript expression engine with isolated-vm sandbox\nImplemented toggle functionality and complex logic support in expressions\nAdded comprehensive admin interface with configuration options\nImproved event-driven architecture for better performance",
-        "de": "erstausstrahlung\nHinzugefügt automatische Jobs Ordner Erstellung\nHinzufügen von Beispiel Job-Konfiguration\nUmfassende Benutzerdokumentation\nImplementiert Cron Job Manager mit Multi-Ziel-Unterstützung\nManuelle Trigger-Funktionalität für jeden Job hinzugefügt\nHinzugefügt Arbeitsplatzstatusüberwachung und Fehlerbehandlung\nVerbesserte Zielkonfiguration mit Typsystem (Wert, Zustand, Ausdruck)\nErgänzte Zustandsreferenzfunktionalität für dynamische Werte\nZusätzlich mächtig JavaScript-Expressionsmotor mit isoliertem vm Sandkasten\nImplementierung von Toggle-Funktionalität und komplexer Logikunterstützung in Ausdrücken\nKomplette Admin-Schnittstelle mit Konfigurationsoptionen hinzugefügt\nVerbesserte ereignisgesteuerte Architektur für bessere Leistung",
-        "ru": "первоначальное освобождение\nДобавлена автоматическая папка создания рабочих мест\nДобавлен пример конфигурации работы\nДобавлена полная пользовательская документация\nВнедренный менеджер по работе cron с многоцелевой поддержкой\nДобавлена функция ручного триггера для каждой работы\nДобавлен мониторинг статуса работы и обработка ошибок\nУлучшенная конфигурация цели с системой типов (значение, состояние, выражение)\nРеализована функциональность ссылочных состояний для динамических значений\nДобавлен мощный JavaScript-движок с изолированной vm-песочницей\nРеализована функция переключения и сложная логическая поддержка в выражениях\nДобавлен комплексный интерфейс администратора с опциями конфигурации\nУлучшенная событийная архитектура для лучшей производительности",
-        "pt": "libertação inicial\nCriação automática de pastas de tarefas\nConfiguração da tarefa de exemplo adicionada\nAdicionada documentação abrangente do usuário\nGestor de tarefas cron implementado com suporte multi-alvo\nAdicionada funcionalidade manual de gatilho para cada tarefa\nMonitoramento do status do trabalho adicionado e manipulação de erros\nConfiguração de destino melhorada com sistema de tipo (valor, estado, expressão)\nFuncionalidade de referência de estado implementada para valores dinâmicos\nAdicionado poderoso Motor de expressão JavaScript com caixa de areia isolada-vm\nFuncionalidade implementada e suporte lógico complexo em expressões\nAdicionado interface de administração abrangente com opções de configuração\nArquitetura orientada para eventos melhorada para melhor desempenho",
-        "nl": "eerste release\nAutomatisch aanmaken van takenmap toegevoegd\nVoorbeeldtaakconfiguratie toegevoegd\nToegevoegd uitgebreide gebruikersdocumentatie\nImplementeerde cron job manager met multi-target ondersteuning\nToegevoegd handmatige trigger functionaliteit voor elke taak\nToegevoegd taakstatus monitoring en foutafhandeling\nVerbeterde doelconfiguratie met typesysteem (waarde, toestand, expressie)\nGeïmplementeerde statusreferentiefunctionaliteit voor dynamische waarden\nKrachtig toegevoegd JavaScript expressie-engine met geïsoleerde-vm sandbox\nGeïmplementeerde toggle functionaliteit en complexe logische ondersteuning in expressies\nUitgebreide admin interface met configuratie-opties toegevoegd\nVerbeterde event-gedreven architectuur voor betere prestaties",
-        "fr": "libération initiale\nAjout de création automatique de dossiers d'emplois\nAjout d'un exemple de configuration d'emploi\nAjout d'une documentation utilisateur complète\nGestionnaire d'emplois Cron mis en œuvre avec un soutien multi-cible\nAjout de la fonctionnalité manuelle de déclenchement pour chaque tâche\nSuivi de l'état de l'emploi et traitement des erreurs\nConfiguration de cible améliorée avec système de type (valeur, état, expression)\nFonction de référence d'état appliquée pour les valeurs dynamiques\nAjouté puissant Moteur d'expression JavaScript avec bac à sable VM isolé\nImplémenté la fonctionnalité et le support logique complexe dans les expressions\nAjout d'une interface admin complète avec des options de configuration\nUne architecture améliorée axée sur les événements pour une meilleure performance",
-        "it": "rilascio iniziale\nCreazione automatica di cartelle di lavoro\nConfigurazione del lavoro di esempio\nDocumentazione utente completa aggiunta\nImplementato cron job manager con supporto multi-target\nAggiunta funzionalità di trigger manuale per ogni lavoro\nAggiunto monitoraggio dello stato di lavoro e gestione degli errori\nConfigurazione di destinazione migliorata con sistema di tipo (valore, stato, espressione)\nFunzionalità di riferimento dello stato implementato per valori dinamici\nAggiunto potente Motore di espressione JavaScript con sandbox isolato-vm\nAttiva funzionalità e supporto logico complesso nelle espressioni\nAggiunta completa interfaccia di amministrazione con le opzioni di configurazione\nArchitettura orientata agli eventi migliorata per prestazioni migliori",
-        "es": "liberación inicial\nCreación de carpetas de trabajo automático\nConfiguración de trabajo de ejemplo\nDocumentación de usuario completa\nGestor de empleo de cron implementado con soporte multiobjetivo\nFunción de activación manual adicional para cada trabajo\nSeguimiento del estado de trabajo y manejo de errores\nConfiguración de destino mejorada con sistema de tipo (valor, estado, expresión)\nFunción de referencia estatal aplicada para valores dinámicos\nAñadido poderoso Motor de expresión JavaScript con caja de arena aislada-vm\nFuncionalidad aplicada y soporte lógico complejo en expresiones\nInterfaz de administración completa con opciones de configuración\nMejora de la arquitectura basada en eventos para un mejor rendimiento",
-        "pl": "początkowe zwolnienie\nDodano automatyczne tworzenie folderów zadań\nDodano przykładową konfigurację zadania\nDodano wyczerpującą dokumentację użytkownika\nZaimplementowany menedżer zadań cron z wielozadaniowym wsparciem\nDodano funkcję ręcznego uruchamiania dla każdego zadania\nDodano monitorowanie statusu pracy i obsługę błędów\nWzmocniona konfiguracja docelowa z systemem typu (wartość, stan, wyrażenie)\nWdrożona funkcja referencyjna państwa dla wartości dynamicznych\nDodano potężny Silnik ekspresji JavaScript z izolowaną skrzynką z piaskiem\nWdrożona funkcjonalność przełączania i kompleksowe wsparcie logiki w wyrażeniach\nDodano kompleksowy interfejs admin z opcjami konfiguracji\nUlepszona architektura oparta na eventach dla lepszej wydajności",
-        "uk": "початковий реліз\nДодано створення автоматичного створення папки робочих місць\nДодано приклад конфігурації роботи\nДодано комплексну документацію користувача\nВпроваджений менеджер роботи з підтримкою багатотаргету\nДодано ручну функцію запуску для кожної роботи\nДодано контроль стану роботи та обробка помилок\nРозширена цільова конфігурація з системою типу (значення, стан, експресія)\nРеалізовано функціональність державного посилання для динамічних значень\nДодати потужний JavaScript-виразковий двигун з ізольованою пісочницею\nВпровадження функціональності та комплексної логічної підтримки у виразах\nДодано комплексний інтерфейс адміністратора з опціями конфігурації\nПокращена архітектура подій для кращої продуктивності",
-        "zh-cn": "初步释放\n添加自动工作文件夹创建\n添加示例任务配置\n添加全面的用户文档\n在多目标支助下,已执行克龙工作经理\n为每个任务添加手动触发功能\n新增工作状态监测和错误处理\n具有类型系统(价值、状态、表达式)的增强目标配置\n已执行的动态值的状态参考功能\n添加强力 JavaScript 表达式引擎, 带有孤立的 vm 沙盒\n在表达式中切换功能和复杂逻辑支持\n添加配置选项的全面管理界面\n改进事件驱动架构,以改善业绩"
-      },
-      "0.1.1": {
-        "en": "Added optional delay functionality for targets",
-        "de": "Optionale Delay-Funktionalität für Targets hinzugefügt",
-        "ru": "Добавлена опциональная функция задержки для целей",
-        "pt": "Adicionada funcionalidade de atraso opcional para alvos",
-        "nl": "Optionele vertraging functionaliteit toegevoegd voor doelen",
-        "fr": "Fonctionnalité de délai optionnel ajoutée pour les cibles",
-        "it": "Aggiunta funzionalità di ritardo opzionale per i target",
-        "es": "Agregada funcionalidad de retraso opcional para objetivos",
-        "pl": "Dodano opcjonalną funkcję opóźnienia dla celów",
-        "uk": "Додано опціональну функцію затримки для цілей",
-        "zh-cn": "为目标添加了可选延迟功能"
-      },
-      "0.1.0": {
-        "en": "Removed expression engine - stable version with value and state targets only",
-        "de": "Expression-Engine entfernt - stabile Version nur mit value und state Targets",
-        "ru": "Удален движок выражений - стабильная версия только с целями value и state",
-        "pt": "Mecanismo de expressões removido - versão estável apenas com alvos value e state",
-        "nl": "Expression engine verwijderd - stabiele versie met alleen value en state doelen",
-        "fr": "Moteur d'expressions supprimé - version stable avec seulement les cibles value et state",
-        "it": "Rimosso motore espressioni - versione stabile solo con target value e state",
-        "es": "Motor de expresiones eliminado - versión estable solo con objetivos value y state",
-        "pl": "Usunięto silnik wyrażeń - stabilna wersja tylko z celami value i state",
-        "uk": "Видалено движок виразів - стабільна версія лише з цілями value та state",
-        "zh-cn": "移除表达式引擎 - 仅包含value和state目标的稳定版本"
-      },
-      "0.0.3": {
-        "en": "Temporarily disabled isolated-vm due to SIGSEGV crashes on ARM64",
-        "de": "Isolated-vm temporär deaktiviert wegen SIGSEGV-Abstürzen auf ARM64",
-        "ru": "Временно отключен isolated-vm из-за сбоев SIGSEGV на ARM64",
-        "pt": "Isolated-vm temporariamente desabilitado devido a crashes SIGSEGV no ARM64",
-        "nl": "Isolated-vm tijdelijk uitgeschakeld vanwege SIGSEGV crashes op ARM64",
-        "fr": "Isolated-vm temporairement désactivé en raison de plantages SIGSEGV sur ARM64",
-        "it": "Isolated-vm temporaneamente disabilitato a causa di crash SIGSEGV su ARM64",
-        "es": "Isolated-vm deshabilitado temporalmente debido a crashes SIGSEGV en ARM64",
-        "pl": "Isolated-vm tymczasowo wyłączony z powodu awarii SIGSEGV na ARM64",
-        "uk": "Isolated-vm тимчасово відключений через збої SIGSEGV на ARM64",
-        "zh-cn": "由于ARM64上的SIGSEGV崩溃，暂时禁用isolated-vm"
-      },
-      "0.0.2": {
-        "en": "Fixed admin dependency version constraint",
-        "de": "Admin-Abhängigkeits-Versionsbeschränkung behoben",
-        "ru": "Исправлено ограничение версии зависимости admin",
-        "pt": "Corrigida restrição de versão de dependência do admin",
-        "nl": "Admin afhankelijkheidsversie beperking opgelost",
-        "fr": "Contrainte de version de dépendance admin corrigée",
-        "it": "Risolto vincolo versione dipendenza admin",
-        "es": "Restricción de versión de dependencia de administrador corregida",
-        "pl": "Naprawiono ograniczenie wersji zależności admin",
-        "uk": "Виправлено обмеження версії залежності admin",
-        "zh-cn": "修复了管理依赖版本约束"
-      },
-      "0.0.1": {
-        "en": "initial release",
-        "de": "Erstveröffentlichung",
-        "ru": "Начальная версия",
-        "pt": "lançamento inicial",
-        "nl": "Eerste uitgave",
-        "fr": "Première version",
-        "it": "Versione iniziale",
-        "es": "Versión inicial",
-        "pl": "Pierwsze wydanie",
-        "uk": "Початкова версія",
-        "zh-cn": "首次出版"
-      }
-    },
-    "titleLang": {
-      "en": "cron_scenes",
-      "de": "cron_scenes",
-      "ru": "cron_scenes",
-      "pt": "CRON_SCENES",
-      "nl": "cron_scenes",
-      "fr": "cron_scenes",
-      "it": "cron_scenes",
-      "es": "cron_scenes",
-      "pl": "cron_ssenes",
-      "uk": "cron_scenes",
-      "zh-cn": "cron_scenes"
-    },
-    "desc": {
-      "en": "cron_scenes",
-      "de": "cron_scenes",
-      "ru": "cron_scenes",
-      "pt": "CRON_SCENES",
-      "nl": "cron_scenes",
-      "fr": "cron_scenes",
-      "it": "cron_scenes",
-      "es": "cron_scenes",
-      "pl": "cron_ssenes",
-      "uk": "cron_scenes",
-      "zh-cn": "cron_scenes"
-    },
-    "authors": [
-      "kuen_je <jens.kuenemund@gmx.de>"
-    ],
-    "keywords": [
-      "cronjob"
-    ],
-    "licenseInformation": {
-      "type": "free",
-      "license": "Unlicense"
-    },
-    "platform": "Javascript/Node.js",
-    "icon": "cron_scenes.png",
-    "enabled": true,
-    "extIcon": "https://raw.githubusercontent.com/jkuenemund/ioBroker.cron_scenes/main/admin/cron_scenes.png",
-    "readme": "https://github.com/jkuenemund/ioBroker.cron_scenes/blob/main/README.md",
-    "loglevel": "info",
-    "tier": 3,
-    "mode": "daemon",
-    "type": "date-and-time",
-    "compact": true,
-    "connectionType": "local",
-    "dataSource": "poll",
-    "adminUI": {
-      "config": "materialize"
-    },
-    "dependencies": [
-      {
-        "js-controller": ">=6.0.11"
-      }
-    ],
-    "globalDependencies": [
-      {
-        "admin": ">=7.0.0"
-      }
-    ]
-  },
-  "native": {
-    "cronFolder": "cron_scenes.0.jobs",
-    "enableLogging": true,
-    "defaultJobsActive": false,
-    "maxConcurrentJobs": 5,
-    "jobTimeout": 30,
-    "createExamples": true
-  },
-  "objects": [],
-  "instanceObjects": []
+	"common": {
+		"name": "cron_scenes",
+		"version": "0.4.0",
+		"news": {
+			"0.4.0": {
+				"en": "* Fixed: Status and trigger objects are no longer deleted when updating job configuration\n* Fixed: Correct calculation of nextRun using cron-parser instead of simplified \"next minute\"\n* Feature: lastRun and nextRun are now displayed in MEZ/MESZ timezone instead of UTC\n* Feature: lastRun is preserved when updating job configuration\n* Feature: Intelligent nextRun calculation for ONCE-type jobs (only shown if not yet executed)\n* Feature: CRON expressions are now interpreted in MEZ/MESZ timezone (both execution and display)\n* Added cron-parser dependency for accurate next run time calculation\n\n<!--\n\tPlaceholder for the next version (at the beginning of the line):\n\t### **WORK IN PROGRESS**\n-->",
+				"de": "* Behoben: Status- und Trigger-Objekte werden beim Aktualisieren der Job-Konfiguration nicht mehr gelöscht\n* Behoben: Korrekte Berechnung von nextRun mit cron-parser statt vereinfachter \"nächste Minute\"\n* Feature: lastRun und nextRun werden jetzt in MEZ/MESZ Zeitzone angezeigt statt UTC\n* Feature: lastRun bleibt beim Aktualisieren der Job-Konfiguration erhalten\n* Feature: Intelligente nextRun-Berechnung für ONCE-Jobs (nur angezeigt wenn noch nicht ausgeführt)\n* Feature: CRON-Expressions werden jetzt in MEZ/MESZ Zeitzone interpretiert (sowohl Ausführung als auch Anzeige)\n* Hinzugefügt: cron-parser Abhängigkeit für genaue Berechnung der nächsten Ausführungszeit\n\n<!--\nPlatzhalter für die nächste Version (am Anfang der Linie):\n**WORK IN PROGRESS**\n-->"
+			},
+			"0.3.0": {
+				"en": "* Added ACL permissions for trigger objects (0x666) to allow REST-API users to trigger jobs\n* Added ACL permissions for status objects (0x644) to allow all users to read job status\n* Implemented automatic cleanup of orphaned status and trigger objects when job states are deleted\n* Added periodic cleanup mechanism (every 5 minutes) to remove orphaned objects\n* Enhanced removeJob() method to automatically clean up associated objects\n* Fixed trigger permissions issue for REST-API users\n\n<!--\n\tPlaceholder for the next version (at the beginning of the line):\n\t### **WORK IN PROGRESS**\n-->",
+				"de": "* Hinzugefügt ACL-Berechtigungen für Trigger-Objekte (0x666), damit REST-API-Benutzer Jobs auslösen können\n* ACL-Berechtigungen für Statusobjekte (0x644) hinzugefügt, damit alle Benutzer den Jobstatus lesen können\n* Ergänzte automatische Säuberung des verwaisten Status und Trigger Objekte, wenn Arbeitszustände gelöscht werden\n* Hinzugefügt periodische Aufräummechanismus (alle 5 Minuten), um verwaiste Objekte zu entfernen\n* Enhanced removeJob() Methode zur automatischen Reinigung von zugehörigen Objekten\n* Fehlerberechtigungen für REST-API-Benutzer behoben\n\n<!--\nPlatzhalter für die nächste Version (am Anfang der Linie):\n**WORK IN PROGRESS**\n-->",
+				"ru": "Добавлены разрешения ACL для триггерных объектов (0x666), позволяющие пользователям REST-API запускать рабочие места\nДобавлены разрешения ACL для объектов статуса (0x644), позволяющие всем пользователям читать статус работы\nВнедрение автоматической очистки статуса сирот и запуска объектов при удалении состояний работы\nДобавлен механизм периодической очистки (каждые 5 минут) для удаления осиротевших предметов\n• Усовершенствованный метод удаления Job() для автоматической очистки связанных объектов\n* Выдача разрешений на запуск для пользователей REST-API\n\n<!--\nЗаполнитель для следующей версии (в начале строки):\n###*РАБОТА В ПРОГРЕСЕ**\n-->",
+				"pt": "* Adicionadas permissões ACL para objetos gatilhos (0x666) para permitir que os usuários REST-API ativem tarefas\n* Adicionadas permissões ACL para objetos de status (0x644) para permitir que todos os usuários leiam status de trabalho\n* Limpeza automática implementada do status órfão e ativar objetos quando os estados de trabalho são excluídos\n* Adicionado mecanismo de limpeza periódica (a cada 5 minutos) para remover objetos órfãos\n* Método RemoveJob() melhorado para limpar automaticamente objetos associados\n* Problema de permissões de disparo fixas para usuários REST-API\n\n<!--\nPositivo para a próxima versão (no início da linha):\nTRABALHAR EM PROGRESSO\n-->",
+				"nl": "* Toegevoegd ACL permissies voor trigger objecten (0x666) om REST-API gebruikers in staat te stellen taken te activeren\n* Toegevoegd ACL permissies voor status objecten (0x644) om alle gebruikers de taakstatus te laten lezen\n* Geïmplementeerde automatische opruiming van weesstatus en trigger objecten wanneer werkstaten worden verwijderd\n* Toegevoegd periodiek schoonmaakmechanisme (elke 5 minuten) om weesobjecten te verwijderen\n* Enhanced removeJob() methode om de bijbehorende objecten automatisch op te ruimen\n* Vaste trigger permissies probleem voor REST-API gebruikers\n\n<!--\nPlaatshouder voor de volgende versie (aan het begin van de regel):\nWORK IN PROGRESS\n-->",
+				"fr": "* Ajout des autorisations ACL pour les objets déclencheurs (0x666) pour permettre aux utilisateurs REST-API de déclencher des tâches\n* Ajout des autorisations ACL pour les objets d'état (0x644) pour permettre à tous les utilisateurs de lire l'état d'emploi\n* Nettoyer automatiquement les objets orphelins et les objets déclencheurs lorsque les états de travail sont supprimés\n* Ajout d'un mécanisme de nettoyage périodique (toutes les 5 minutes) pour enlever les objets orphelins\n* Méthode améliorée removeJob() pour nettoyer automatiquement les objets associés\n* Problème d'autorisation de déclenchement corrigé pour les utilisateurs REST-API\n\n<!--\nPlaceholder pour la prochaine version (au début de la ligne):\n### **WORK IN PROGRESS**\n-->",
+				"it": "* Aggiunto autorizzazioni ACL per gli oggetti di trigger (0x666) per consentire agli utenti REST-API di attivare i lavori\n* Aggiunto autorizzazioni ACL per oggetti di stato (0x644) per consentire a tutti gli utenti di leggere lo stato del lavoro\n* Pulitura automatica semplificata dello stato orfano e degli oggetti di trigger quando gli stati di lavoro vengono eliminati\n* Aggiunto meccanismo di pulizia periodica (ogni 5 minuti) per rimuovere gli oggetti orfani\n* Metodo Enhanced removeJob() per pulire automaticamente gli oggetti associati\n* Emissione di permessi di trigger fissi per gli utenti REST-API\n\n<!--\nSegnaposto per la prossima versione (all'inizio della linea):\n######WORK IN PROGRESS #\n-->",
+				"es": "* Los permisos ACL añadidos para activar objetos (0x666) para permitir que los usuarios REST-API desencadenen empleos\n* Los permisos ACL añadidos para objetos de estado (0x644) para permitir a todos los usuarios leer el estado de trabajo\n* Limpieza automática aplicada del estado huérfano y los objetos desencadenantes cuando se eliminan los estados de trabajo\n* Mecanismo de limpieza periódica adicional (cada 5 minutos) para eliminar objetos huérfanos\n* Método de eliminación mejoradaJob() para limpiar automáticamente los objetos asociados\n* Número de permisos de activación fijos para los usuarios de REST-API\n\n<!--\nTitular para la próxima versión (al principio de la línea):\n#### **WORK IN PROGRESS**\n-->",
+				"pl": "* Dodano uprawnienia ACL dla obiektów wyzwalających (0x666), aby umożliwić użytkownikom REST- API uruchomienie zadań\n* Dodano uprawnienia ACL dla obiektów stanu (0x644), aby umożliwić wszystkim użytkownikom odczytanie statusu zadania\n* Wdrożenie automatycznego czyszczenia osieroconego statusu i obiektów wyzwalających, gdy stan zadania zostanie usunięty\n* Dodano okresowy mechanizm oczyszczania (co 5 minut), aby usunąć osierocone obiekty\n* Wzmocniona metoda usuwania joba () do automatycznego czyszczenia powiązanych obiektów\n* Naprawiono problem uprawnień wyzwalających dla użytkowników REST- API\n\n<!--\nUchwyt do następnej wersji (na początku wiersza):\n** * WORK IN PROGRESS **\n-->",
+				"uk": "* Додано ACL дозволи на тригерні об'єкти (0x666) щоб дозволити користувачам REST-API викликати робочі місця\n* Додано ACL дозволи на статус об'єктів (0x644), щоб дозволити всім користувачам читати статус роботи\n* Реалізовано автоматичне очищення дітей-сирітного статусу та тригерних об'єктів при видаленні робочих органів\n* Додано періодичний механізм очищення (всі 5 хвилин) для видалення дитячих будинків\n* Покращений метод removeJob() для автоматичного очищення пов'язаних об'єктів\n* Видача дозволів для користувачів REST-API\n\n<!--\nМісцевласника для наступної версії (на початку лінії):\n###**\n-->",
+				"zh-cn": "* 添加触发对象的ACL权限( 0x666) 允许 REST- API 用户触发任务\n* 添加状态对象的ACL权限( 0x644) , 允许所有用户读取工作状态\n* 取消工作状态时自动清理孤儿身份和触发对象\n* 增加定期清理机制(每5分钟一次)以清除孤儿物品\n* 强化去除Job()方法,以自动清理相关对象\n* 为REST-API用户发放固定触发权限\n\n<!--\n下一个版本(行首)的占位符 :\n** 工作进展**\n-->"
+			},
+			"0.2.0": {
+				"en": "initial release\nAdded automatic jobs folder creation\nAdded example job configuration\nAdded comprehensive user documentation\nImplemented cron job manager with multi-target support\nAdded manual trigger functionality for each job\nAdded job status monitoring and error handling\nEnhanced target configuration with type system (value, state, expression)\nImplemented state reference functionality for dynamic values\nAdded powerful JavaScript expression engine with isolated-vm sandbox\nImplemented toggle functionality and complex logic support in expressions\nAdded comprehensive admin interface with configuration options\nImproved event-driven architecture for better performance",
+				"de": "erstausstrahlung\nHinzugefügt automatische Jobs Ordner Erstellung\nHinzufügen von Beispiel Job-Konfiguration\nUmfassende Benutzerdokumentation\nImplementiert Cron Job Manager mit Multi-Ziel-Unterstützung\nManuelle Trigger-Funktionalität für jeden Job hinzugefügt\nHinzugefügt Arbeitsplatzstatusüberwachung und Fehlerbehandlung\nVerbesserte Zielkonfiguration mit Typsystem (Wert, Zustand, Ausdruck)\nErgänzte Zustandsreferenzfunktionalität für dynamische Werte\nZusätzlich mächtig JavaScript-Expressionsmotor mit isoliertem vm Sandkasten\nImplementierung von Toggle-Funktionalität und komplexer Logikunterstützung in Ausdrücken\nKomplette Admin-Schnittstelle mit Konfigurationsoptionen hinzugefügt\nVerbesserte ereignisgesteuerte Architektur für bessere Leistung",
+				"ru": "первоначальное освобождение\nДобавлена автоматическая папка создания рабочих мест\nДобавлен пример конфигурации работы\nДобавлена полная пользовательская документация\nВнедренный менеджер по работе cron с многоцелевой поддержкой\nДобавлена функция ручного триггера для каждой работы\nДобавлен мониторинг статуса работы и обработка ошибок\nУлучшенная конфигурация цели с системой типов (значение, состояние, выражение)\nРеализована функциональность ссылочных состояний для динамических значений\nДобавлен мощный JavaScript-движок с изолированной vm-песочницей\nРеализована функция переключения и сложная логическая поддержка в выражениях\nДобавлен комплексный интерфейс администратора с опциями конфигурации\nУлучшенная событийная архитектура для лучшей производительности",
+				"pt": "libertação inicial\nCriação automática de pastas de tarefas\nConfiguração da tarefa de exemplo adicionada\nAdicionada documentação abrangente do usuário\nGestor de tarefas cron implementado com suporte multi-alvo\nAdicionada funcionalidade manual de gatilho para cada tarefa\nMonitoramento do status do trabalho adicionado e manipulação de erros\nConfiguração de destino melhorada com sistema de tipo (valor, estado, expressão)\nFuncionalidade de referência de estado implementada para valores dinâmicos\nAdicionado poderoso Motor de expressão JavaScript com caixa de areia isolada-vm\nFuncionalidade implementada e suporte lógico complexo em expressões\nAdicionado interface de administração abrangente com opções de configuração\nArquitetura orientada para eventos melhorada para melhor desempenho",
+				"nl": "eerste release\nAutomatisch aanmaken van takenmap toegevoegd\nVoorbeeldtaakconfiguratie toegevoegd\nToegevoegd uitgebreide gebruikersdocumentatie\nImplementeerde cron job manager met multi-target ondersteuning\nToegevoegd handmatige trigger functionaliteit voor elke taak\nToegevoegd taakstatus monitoring en foutafhandeling\nVerbeterde doelconfiguratie met typesysteem (waarde, toestand, expressie)\nGeïmplementeerde statusreferentiefunctionaliteit voor dynamische waarden\nKrachtig toegevoegd JavaScript expressie-engine met geïsoleerde-vm sandbox\nGeïmplementeerde toggle functionaliteit en complexe logische ondersteuning in expressies\nUitgebreide admin interface met configuratie-opties toegevoegd\nVerbeterde event-gedreven architectuur voor betere prestaties",
+				"fr": "libération initiale\nAjout de création automatique de dossiers d'emplois\nAjout d'un exemple de configuration d'emploi\nAjout d'une documentation utilisateur complète\nGestionnaire d'emplois Cron mis en œuvre avec un soutien multi-cible\nAjout de la fonctionnalité manuelle de déclenchement pour chaque tâche\nSuivi de l'état de l'emploi et traitement des erreurs\nConfiguration de cible améliorée avec système de type (valeur, état, expression)\nFonction de référence d'état appliquée pour les valeurs dynamiques\nAjouté puissant Moteur d'expression JavaScript avec bac à sable VM isolé\nImplémenté la fonctionnalité et le support logique complexe dans les expressions\nAjout d'une interface admin complète avec des options de configuration\nUne architecture améliorée axée sur les événements pour une meilleure performance",
+				"it": "rilascio iniziale\nCreazione automatica di cartelle di lavoro\nConfigurazione del lavoro di esempio\nDocumentazione utente completa aggiunta\nImplementato cron job manager con supporto multi-target\nAggiunta funzionalità di trigger manuale per ogni lavoro\nAggiunto monitoraggio dello stato di lavoro e gestione degli errori\nConfigurazione di destinazione migliorata con sistema di tipo (valore, stato, espressione)\nFunzionalità di riferimento dello stato implementato per valori dinamici\nAggiunto potente Motore di espressione JavaScript con sandbox isolato-vm\nAttiva funzionalità e supporto logico complesso nelle espressioni\nAggiunta completa interfaccia di amministrazione con le opzioni di configurazione\nArchitettura orientata agli eventi migliorata per prestazioni migliori",
+				"es": "liberación inicial\nCreación de carpetas de trabajo automático\nConfiguración de trabajo de ejemplo\nDocumentación de usuario completa\nGestor de empleo de cron implementado con soporte multiobjetivo\nFunción de activación manual adicional para cada trabajo\nSeguimiento del estado de trabajo y manejo de errores\nConfiguración de destino mejorada con sistema de tipo (valor, estado, expresión)\nFunción de referencia estatal aplicada para valores dinámicos\nAñadido poderoso Motor de expresión JavaScript con caja de arena aislada-vm\nFuncionalidad aplicada y soporte lógico complejo en expresiones\nInterfaz de administración completa con opciones de configuración\nMejora de la arquitectura basada en eventos para un mejor rendimiento",
+				"pl": "początkowe zwolnienie\nDodano automatyczne tworzenie folderów zadań\nDodano przykładową konfigurację zadania\nDodano wyczerpującą dokumentację użytkownika\nZaimplementowany menedżer zadań cron z wielozadaniowym wsparciem\nDodano funkcję ręcznego uruchamiania dla każdego zadania\nDodano monitorowanie statusu pracy i obsługę błędów\nWzmocniona konfiguracja docelowa z systemem typu (wartość, stan, wyrażenie)\nWdrożona funkcja referencyjna państwa dla wartości dynamicznych\nDodano potężny Silnik ekspresji JavaScript z izolowaną skrzynką z piaskiem\nWdrożona funkcjonalność przełączania i kompleksowe wsparcie logiki w wyrażeniach\nDodano kompleksowy interfejs admin z opcjami konfiguracji\nUlepszona architektura oparta na eventach dla lepszej wydajności",
+				"uk": "початковий реліз\nДодано створення автоматичного створення папки робочих місць\nДодано приклад конфігурації роботи\nДодано комплексну документацію користувача\nВпроваджений менеджер роботи з підтримкою багатотаргету\nДодано ручну функцію запуску для кожної роботи\nДодано контроль стану роботи та обробка помилок\nРозширена цільова конфігурація з системою типу (значення, стан, експресія)\nРеалізовано функціональність державного посилання для динамічних значень\nДодати потужний JavaScript-виразковий двигун з ізольованою пісочницею\nВпровадження функціональності та комплексної логічної підтримки у виразах\nДодано комплексний інтерфейс адміністратора з опціями конфігурації\nПокращена архітектура подій для кращої продуктивності",
+				"zh-cn": "初步释放\n添加自动工作文件夹创建\n添加示例任务配置\n添加全面的用户文档\n在多目标支助下,已执行克龙工作经理\n为每个任务添加手动触发功能\n新增工作状态监测和错误处理\n具有类型系统(价值、状态、表达式)的增强目标配置\n已执行的动态值的状态参考功能\n添加强力 JavaScript 表达式引擎, 带有孤立的 vm 沙盒\n在表达式中切换功能和复杂逻辑支持\n添加配置选项的全面管理界面\n改进事件驱动架构,以改善业绩"
+			},
+			"0.1.1": {
+				"en": "Added optional delay functionality for targets",
+				"de": "Optionale Delay-Funktionalität für Targets hinzugefügt",
+				"ru": "Добавлена опциональная функция задержки для целей",
+				"pt": "Adicionada funcionalidade de atraso opcional para alvos",
+				"nl": "Optionele vertraging functionaliteit toegevoegd voor doelen",
+				"fr": "Fonctionnalité de délai optionnel ajoutée pour les cibles",
+				"it": "Aggiunta funzionalità di ritardo opzionale per i target",
+				"es": "Agregada funcionalidad de retraso opcional para objetivos",
+				"pl": "Dodano opcjonalną funkcję opóźnienia dla celów",
+				"uk": "Додано опціональну функцію затримки для цілей",
+				"zh-cn": "为目标添加了可选延迟功能"
+			},
+			"0.1.0": {
+				"en": "Removed expression engine - stable version with value and state targets only",
+				"de": "Expression-Engine entfernt - stabile Version nur mit value und state Targets",
+				"ru": "Удален движок выражений - стабильная версия только с целями value и state",
+				"pt": "Mecanismo de expressões removido - versão estável apenas com alvos value e state",
+				"nl": "Expression engine verwijderd - stabiele versie met alleen value en state doelen",
+				"fr": "Moteur d'expressions supprimé - version stable avec seulement les cibles value et state",
+				"it": "Rimosso motore espressioni - versione stabile solo con target value e state",
+				"es": "Motor de expresiones eliminado - versión estable solo con objetivos value y state",
+				"pl": "Usunięto silnik wyrażeń - stabilna wersja tylko z celami value i state",
+				"uk": "Видалено движок виразів - стабільна версія лише з цілями value та state",
+				"zh-cn": "移除表达式引擎 - 仅包含value和state目标的稳定版本"
+			},
+			"0.0.3": {
+				"en": "Temporarily disabled isolated-vm due to SIGSEGV crashes on ARM64",
+				"de": "Isolated-vm temporär deaktiviert wegen SIGSEGV-Abstürzen auf ARM64",
+				"ru": "Временно отключен isolated-vm из-за сбоев SIGSEGV на ARM64",
+				"pt": "Isolated-vm temporariamente desabilitado devido a crashes SIGSEGV no ARM64",
+				"nl": "Isolated-vm tijdelijk uitgeschakeld vanwege SIGSEGV crashes op ARM64",
+				"fr": "Isolated-vm temporairement désactivé en raison de plantages SIGSEGV sur ARM64",
+				"it": "Isolated-vm temporaneamente disabilitato a causa di crash SIGSEGV su ARM64",
+				"es": "Isolated-vm deshabilitado temporalmente debido a crashes SIGSEGV en ARM64",
+				"pl": "Isolated-vm tymczasowo wyłączony z powodu awarii SIGSEGV na ARM64",
+				"uk": "Isolated-vm тимчасово відключений через збої SIGSEGV на ARM64",
+				"zh-cn": "由于ARM64上的SIGSEGV崩溃，暂时禁用isolated-vm"
+			},
+			"0.0.2": {
+				"en": "Fixed admin dependency version constraint",
+				"de": "Admin-Abhängigkeits-Versionsbeschränkung behoben",
+				"ru": "Исправлено ограничение версии зависимости admin",
+				"pt": "Corrigida restrição de versão de dependência do admin",
+				"nl": "Admin afhankelijkheidsversie beperking opgelost",
+				"fr": "Contrainte de version de dépendance admin corrigée",
+				"it": "Risolto vincolo versione dipendenza admin",
+				"es": "Restricción de versión de dependencia de administrador corregida",
+				"pl": "Naprawiono ograniczenie wersji zależności admin",
+				"uk": "Виправлено обмеження версії залежності admin",
+				"zh-cn": "修复了管理依赖版本约束"
+			},
+			"0.0.1": {
+				"en": "initial release",
+				"de": "Erstveröffentlichung",
+				"ru": "Начальная версия",
+				"pt": "lançamento inicial",
+				"nl": "Eerste uitgave",
+				"fr": "Première version",
+				"it": "Versione iniziale",
+				"es": "Versión inicial",
+				"pl": "Pierwsze wydanie",
+				"uk": "Початкова версія",
+				"zh-cn": "首次出版"
+			}
+		},
+		"titleLang": {
+			"en": "cron_scenes",
+			"de": "cron_scenes",
+			"ru": "cron_scenes",
+			"pt": "CRON_SCENES",
+			"nl": "cron_scenes",
+			"fr": "cron_scenes",
+			"it": "cron_scenes",
+			"es": "cron_scenes",
+			"pl": "cron_ssenes",
+			"uk": "cron_scenes",
+			"zh-cn": "cron_scenes"
+		},
+		"desc": {
+			"en": "cron_scenes",
+			"de": "cron_scenes",
+			"ru": "cron_scenes",
+			"pt": "CRON_SCENES",
+			"nl": "cron_scenes",
+			"fr": "cron_scenes",
+			"it": "cron_scenes",
+			"es": "cron_scenes",
+			"pl": "cron_ssenes",
+			"uk": "cron_scenes",
+			"zh-cn": "cron_scenes"
+		},
+		"authors": ["kuen_je <jens.kuenemund@gmx.de>"],
+		"keywords": ["cronjob"],
+		"licenseInformation": {
+			"type": "free",
+			"license": "Unlicense"
+		},
+		"platform": "Javascript/Node.js",
+		"icon": "cron_scenes.png",
+		"enabled": true,
+		"extIcon": "https://raw.githubusercontent.com/jkuenemund/ioBroker.cron_scenes/main/admin/cron_scenes.png",
+		"readme": "https://github.com/jkuenemund/ioBroker.cron_scenes/blob/main/README.md",
+		"loglevel": "info",
+		"tier": 3,
+		"mode": "daemon",
+		"type": "date-and-time",
+		"compact": true,
+		"connectionType": "local",
+		"dataSource": "poll",
+		"adminUI": {
+			"config": "materialize"
+		},
+		"dependencies": [
+			{
+				"js-controller": ">=6.0.11"
+			}
+		],
+		"globalDependencies": [
+			{
+				"admin": ">=7.0.0"
+			}
+		]
+	},
+	"native": {
+		"cronFolder": "cron_scenes.0.jobs",
+		"enableLogging": true,
+		"defaultJobsActive": false,
+		"maxConcurrentJobs": 5,
+		"jobTimeout": 30,
+		"createExamples": true
+	},
+	"objects": [],
+	"instanceObjects": []
 }

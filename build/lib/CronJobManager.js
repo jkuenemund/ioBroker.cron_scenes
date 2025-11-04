@@ -36,6 +36,7 @@ __export(CronJobManager_exports, {
   CronJobManager: () => CronJobManager
 });
 module.exports = __toCommonJS(CronJobManager_exports);
+var import_cron_parser = __toESM(require("cron-parser"));
 var cron = __toESM(require("node-cron"));
 var import_ConfigValidator = require("./ConfigValidator");
 var import_constants = require("./constants");
@@ -83,19 +84,57 @@ class CronJobManager {
       if (existingJob == null ? void 0 : existingJob.task) {
         existingJob.task.stop();
       }
+      let existingLastRun;
+      try {
+        const statusId2 = jobId + ".status";
+        const statusState = await this.adapter.getStateAsync(statusId2);
+        if (statusState == null ? void 0 : statusState.val) {
+          try {
+            const existingStatus = JSON.parse(statusState.val);
+            if (existingStatus.lastRun) {
+              existingLastRun = existingStatus.lastRun;
+              this.adapter.log.debug(`CronJobManager: Preserving existing lastRun: ${existingLastRun}`);
+            }
+          } catch (parseError) {
+          }
+        }
+      } catch (error) {
+        this.adapter.log.debug(`CronJobManager: No existing status found for ${jobId}, creating new`);
+      }
+      let nextRun;
+      if (validatedConfig.active && validatedConfig.type !== import_constants.CRON_JOB_TYPE.MANUAL && validatedConfig.cron) {
+        if (validatedConfig.type === import_constants.CRON_JOB_TYPE.ONCE) {
+          if (!existingLastRun) {
+            nextRun = this.getNextRunTime(validatedConfig.cron);
+          }
+        } else {
+          nextRun = this.getNextRunTime(validatedConfig.cron);
+        }
+      }
       const newJob = {
         id: jobId,
         config: { ...validatedConfig },
         status: {
           status: import_constants.CRON_JOB_STATUS.PENDING,
-          nextRun: validatedConfig.active && validatedConfig.type !== import_constants.CRON_JOB_TYPE.MANUAL && validatedConfig.cron ? this.getNextRunTime(validatedConfig.cron) : void 0
+          lastRun: existingLastRun,
+          // Preserve existing lastRun
+          nextRun
         }
       };
       if (validatedConfig.active && validatedConfig.type !== import_constants.CRON_JOB_TYPE.MANUAL && validatedConfig.cron) {
-        newJob.task = cron.schedule(validatedConfig.cron, () => {
-          this.executeJob(jobId);
-        });
-        this.adapter.log.info(`CronJobManager: Started job ${jobId} with cron '${validatedConfig.cron}'`);
+        newJob.task = cron.schedule(
+          validatedConfig.cron,
+          () => {
+            this.executeJob(jobId);
+          },
+          {
+            timezone: "Europe/Berlin"
+            // Use MEZ/MESZ timezone
+          }
+        );
+        this.adapter.log.info(
+          `CronJobManager: Started job ${jobId} with cron '${validatedConfig.cron}' (MEZ/MESZ)`
+        );
       } else if (validatedConfig.type === import_constants.CRON_JOB_TYPE.MANUAL) {
         this.adapter.log.info(`CronJobManager: Manual job ${jobId} created - trigger only execution`);
       } else {
@@ -204,8 +243,11 @@ class CronJobManager {
       const existingJob = this.jobs.get(jobId);
       if (!existingJob || JSON.stringify(existingJob.config) !== JSON.stringify(config)) {
         if (existingJob) {
-          this.adapter.log.info(`CronJobManager: Configuration changed for job ${jobId}, removing old job`);
-          this.removeJob(jobId);
+          this.adapter.log.info(`CronJobManager: Configuration changed for job ${jobId}, stopping old job`);
+          if (existingJob.task) {
+            existingJob.task.stop();
+          }
+          this.jobs.delete(jobId);
         }
         this.adapter.log.info(`CronJobManager: Adding job ${jobId} with new configuration`);
         await this.addOrUpdateJob(jobId, config);
@@ -259,7 +301,10 @@ class CronJobManager {
       const existingJob = this.jobs.get(jobId);
       if (existingJob && JSON.stringify(existingJob.config) !== JSON.stringify(config)) {
         this.adapter.log.info(`CronJobManager: Config changed during refresh for job ${jobId}, updating job`);
-        this.removeJob(jobId);
+        if (existingJob.task) {
+          existingJob.task.stop();
+        }
+        this.jobs.delete(jobId);
         await this.addOrUpdateJob(jobId, config);
       }
     } catch (error) {
@@ -270,7 +315,7 @@ class CronJobManager {
    * Execute a cron job
    */
   async executeJob(jobId) {
-    const startTime = (/* @__PURE__ */ new Date()).toISOString();
+    const startTime = this.toMEZ(/* @__PURE__ */ new Date());
     try {
       const job = this.jobs.get(jobId);
       if (!job) {
@@ -295,6 +340,8 @@ class CronJobManager {
           job.task.stop();
           job.task = void 0;
         }
+        status.nextRun = void 0;
+        await this.updateJobStatus(jobId, status);
       }
       this.adapter.log.info(`CronJobManager: Job ${jobId} executed successfully`);
     } catch (error) {
@@ -379,13 +426,51 @@ class CronJobManager {
     }
   }
   /**
-   * Get next run time for a cron expression
+   * Convert a date to MEZ/MESZ (Europe/Berlin) timezone and return as ISO string
+   */
+  toMEZ(date) {
+    var _a, _b, _c, _d, _e, _f;
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Berlin",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    });
+    const parts = formatter.formatToParts(date);
+    const year = (_a = parts.find((p) => p.type === "year")) == null ? void 0 : _a.value;
+    const month = (_b = parts.find((p) => p.type === "month")) == null ? void 0 : _b.value;
+    const day = (_c = parts.find((p) => p.type === "day")) == null ? void 0 : _c.value;
+    const hour = (_d = parts.find((p) => p.type === "hour")) == null ? void 0 : _d.value;
+    const minute = (_e = parts.find((p) => p.type === "minute")) == null ? void 0 : _e.value;
+    const second = (_f = parts.find((p) => p.type === "second")) == null ? void 0 : _f.value;
+    const berlinTimeString = date.toLocaleString("en-US", { timeZone: "Europe/Berlin" });
+    const utcTimeString = date.toLocaleString("en-US", { timeZone: "UTC" });
+    const berlinTime = new Date(berlinTimeString);
+    const utcTime = new Date(utcTimeString);
+    const offsetMs = berlinTime.getTime() - utcTime.getTime();
+    const offsetHours = Math.floor(offsetMs / (1e3 * 60 * 60));
+    const offsetMinutes = Math.abs(Math.floor(offsetMs % (1e3 * 60 * 60) / (1e3 * 60)));
+    const offsetSign = offsetHours >= 0 ? "+" : "-";
+    const offsetString = `${offsetSign}${Math.abs(offsetHours).toString().padStart(2, "0")}:${offsetMinutes.toString().padStart(2, "0")}`;
+    return `${year}-${month}-${day}T${hour}:${minute}:${second}${offsetString}`;
+  }
+  /**
+   * Get next run time for a cron expression in MEZ
    */
   getNextRunTime(cronExpression) {
     try {
-      const now = /* @__PURE__ */ new Date();
-      const nextRun = new Date(now.getTime() + 6e4);
-      return nextRun.toISOString();
+      const interval = import_cron_parser.default.parse(cronExpression, {
+        tz: "Europe/Berlin"
+      });
+      const nextRun = interval.next();
+      if (!nextRun) {
+        return void 0;
+      }
+      return this.toMEZ(nextRun.toDate());
     } catch (error) {
       this.adapter.log.warn(`CronJobManager: Error calculating next run time for '${cronExpression}': ${error}`);
       return void 0;

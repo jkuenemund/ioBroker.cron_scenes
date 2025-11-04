@@ -1,6 +1,6 @@
 {
   "name": "iobroker.cron_scenes",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "cron_scenes",
   "author": {
     "name": "kuen_je",
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@iobroker/adapter-core": "^3.3.2",
+    "cron-parser": "^5.4.0",
     "node-cron": "^4.2.1"
   },
   "devDependencies": {

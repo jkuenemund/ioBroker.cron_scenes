@@ -577,6 +577,19 @@ The ioBroker.admin interface will then be available at http://localhost:8181/
 Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev-server#command-line) for more details.
 
 ## Changelog
+
+### **WORK IN PROGRESS**
+
+### 0.4.0 (2025-11-05)
+
+- (kuen_je) Fixed: Status and trigger objects are no longer deleted when updating job configuration
+- (kuen_je) Fixed: Correct calculation of nextRun using cron-parser instead of simplified "next minute"
+- (kuen_je) Feature: lastRun and nextRun are now displayed in MEZ/MESZ timezone instead of UTC
+- (kuen_je) Feature: lastRun is preserved when updating job configuration
+- (kuen_je) Feature: Intelligent nextRun calculation for ONCE-type jobs (only shown if not yet executed)
+- (kuen_je) Feature: CRON expressions are now interpreted in MEZ/MESZ timezone (both execution and display)
+- (kuen_je) Added cron-parser dependency for accurate next run time calculation
+
 ### 0.3.0 (2025-10-07)
 
 - (kuen_je) Added ACL permissions for trigger objects (0x666) to allow REST-API users to trigger jobs
