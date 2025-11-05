@@ -1,8 +1,12 @@
 {
 	"common": {
 		"name": "cron_scenes",
-		"version": "0.4.0",
+    "version": "0.4.1",
 		"news": {
+			"0.4.1": {
+				"en": "* Fixed: CRON expressions with day-of-week ranges 1-7 or 0-7 are now automatically normalized to work correctly with node-cron timezone option\n* Fixed: Added validation with cron-parser to ensure consistency between both cron libraries\n* Improved: Automatic normalization of problematic day-of-week ranges (1-7 → *, 0-7 → *, 7 → 0)\n\n<!--\n\tPlaceholder for the next version (at the beginning of the line):\n\t### **WORK IN PROGRESS**\n-->",
+				"de": "* Behoben: CRON-Expressions mit Wochentag-Bereichen 1-7 oder 0-7 werden jetzt automatisch normalisiert, um korrekt mit der node-cron Zeitzone-Option zu funktionieren\n* Behoben: Validierung mit cron-parser hinzugefügt, um Konsistenz zwischen beiden Cron-Bibliotheken sicherzustellen\n* Verbessert: Automatische Normalisierung problematischer Wochentag-Bereiche (1-7 → *, 0-7 → *, 7 → 0)\n\n<!--\nPlatzhalter für die nächste Version (am Anfang der Linie):\n**WORK IN PROGRESS**\n-->"
+			},
 			"0.4.0": {
 				"en": "* Fixed: Status and trigger objects are no longer deleted when updating job configuration\n* Fixed: Correct calculation of nextRun using cron-parser instead of simplified \"next minute\"\n* Feature: lastRun and nextRun are now displayed in MEZ/MESZ timezone instead of UTC\n* Feature: lastRun is preserved when updating job configuration\n* Feature: Intelligent nextRun calculation for ONCE-type jobs (only shown if not yet executed)\n* Feature: CRON expressions are now interpreted in MEZ/MESZ timezone (both execution and display)\n* Added cron-parser dependency for accurate next run time calculation\n\n<!--\n\tPlaceholder for the next version (at the beginning of the line):\n\t### **WORK IN PROGRESS**\n-->",
 				"de": "* Behoben: Status- und Trigger-Objekte werden beim Aktualisieren der Job-Konfiguration nicht mehr gelöscht\n* Behoben: Korrekte Berechnung von nextRun mit cron-parser statt vereinfachter \"nächste Minute\"\n* Feature: lastRun und nextRun werden jetzt in MEZ/MESZ Zeitzone angezeigt statt UTC\n* Feature: lastRun bleibt beim Aktualisieren der Job-Konfiguration erhalten\n* Feature: Intelligente nextRun-Berechnung für ONCE-Jobs (nur angezeigt wenn noch nicht ausgeführt)\n* Feature: CRON-Expressions werden jetzt in MEZ/MESZ Zeitzone interpretiert (sowohl Ausführung als auch Anzeige)\n* Hinzugefügt: cron-parser Abhängigkeit für genaue Berechnung der nächsten Ausführungszeit\n\n<!--\nPlatzhalter für die nächste Version (am Anfang der Linie):\n**WORK IN PROGRESS**\n-->"

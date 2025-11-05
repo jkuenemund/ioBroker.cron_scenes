@@ -1,3 +1,4 @@
+import CronExpressionParser from "cron-parser";
 import * as cron from "node-cron";
 import { CRON_ERROR_CODE, CRON_JOB_TYPE, CRON_TARGET_TYPE } from "./constants";
 import { CronJobError } from "./errors";
@@ -35,9 +36,42 @@ export class ConfigValidator {
 				);
 			}
 
-			if (!cron.validate(config.cron)) {
+			// Normalize cron expression: convert problematic day-of-week ranges
+			// node-cron with timezone option doesn't execute ranges like 1-7 or 0-7 correctly
+			// Convert them to 0-6 (all days) or * (all days)
+			let normalizedCron = config.cron;
+			const dayOfWeekPattern = /^(\S+\s+\S+\s+\S+\s+\S+\s+)([0-7,\-*\/]+)$/;
+			const match = normalizedCron.match(dayOfWeekPattern);
+			if (match) {
+				const dayOfWeek = match[2];
+				// Convert problematic ranges
+				if (dayOfWeek === "1-7" || dayOfWeek === "0-7") {
+					normalizedCron = match[1] + "*"; // Convert to * (all days)
+				} else if (dayOfWeek.includes("7") && !dayOfWeek.includes("0")) {
+					// If 7 is used without 0, replace 7 with 0 (both are Sunday)
+					normalizedCron = match[1] + dayOfWeek.replace(/7/g, "0");
+				}
+			}
+
+			if (!cron.validate(normalizedCron)) {
 				throw new CronJobError(`Invalid cron expression: ${config.cron}`, jobId, CRON_ERROR_CODE.INVALID_CRON);
 			}
+
+			// Also validate with cron-parser to ensure consistency between both libraries
+			try {
+				CronExpressionParser.parse(normalizedCron, {
+					tz: "Europe/Berlin",
+				});
+			} catch (parseError) {
+				throw new CronJobError(
+					`Invalid cron expression: ${config.cron}. ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+					jobId,
+					CRON_ERROR_CODE.INVALID_CRON,
+				);
+			}
+
+			// Use normalized cron expression for the validated config
+			config.cron = normalizedCron;
 		}
 
 		// Validate targets

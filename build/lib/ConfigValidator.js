@@ -31,6 +31,7 @@ __export(ConfigValidator_exports, {
   ConfigValidator: () => ConfigValidator
 });
 module.exports = __toCommonJS(ConfigValidator_exports);
+var import_cron_parser = __toESM(require("cron-parser"));
 var cron = __toESM(require("node-cron"));
 var import_constants = require("./constants");
 var import_errors = require("./errors");
@@ -58,9 +59,32 @@ class ConfigValidator {
           import_constants.CRON_ERROR_CODE.CONFIG_INVALID
         );
       }
-      if (!cron.validate(config.cron)) {
+      let normalizedCron = config.cron;
+      const dayOfWeekPattern = /^(\S+\s+\S+\s+\S+\s+\S+\s+)([0-7,\-*\/]+)$/;
+      const match = normalizedCron.match(dayOfWeekPattern);
+      if (match) {
+        const dayOfWeek = match[2];
+        if (dayOfWeek === "1-7" || dayOfWeek === "0-7") {
+          normalizedCron = match[1] + "*";
+        } else if (dayOfWeek.includes("7") && !dayOfWeek.includes("0")) {
+          normalizedCron = match[1] + dayOfWeek.replace(/7/g, "0");
+        }
+      }
+      if (!cron.validate(normalizedCron)) {
         throw new import_errors.CronJobError(`Invalid cron expression: ${config.cron}`, jobId, import_constants.CRON_ERROR_CODE.INVALID_CRON);
       }
+      try {
+        import_cron_parser.default.parse(normalizedCron, {
+          tz: "Europe/Berlin"
+        });
+      } catch (parseError) {
+        throw new import_errors.CronJobError(
+          `Invalid cron expression: ${config.cron}. ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+          jobId,
+          import_constants.CRON_ERROR_CODE.INVALID_CRON
+        );
+      }
+      config.cron = normalizedCron;
     }
     if (!Array.isArray(config.targets) || config.targets.length === 0) {
       throw new import_errors.CronJobError("Targets must be a non-empty array", jobId, import_constants.CRON_ERROR_CODE.CONFIG_INVALID);

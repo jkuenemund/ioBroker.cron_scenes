@@ -580,6 +580,12 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ### **WORK IN PROGRESS**
 
+### 0.4.1 (2025-11-05)
+
+- (kuen_je) Fixed: CRON expressions with day-of-week ranges 1-7 or 0-7 are now automatically normalized to work correctly with node-cron timezone option
+- (kuen_je) Fixed: Added validation with cron-parser to ensure consistency between both cron libraries
+- (kuen*je) Improved: Automatic normalization of problematic day-of-week ranges (1-7 → *, 0-7 → \_, 7 → 0)
+
 ### 0.4.0 (2025-11-05)
 
 - (kuen_je) Fixed: Status and trigger objects are no longer deleted when updating job configuration
