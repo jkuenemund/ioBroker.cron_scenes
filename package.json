@@ -1,6 +1,6 @@
 {
   "name": "iobroker.cron_scenes",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "cron_scenes",
   "author": {
     "name": "kuen_je",

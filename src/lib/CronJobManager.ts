@@ -15,6 +15,8 @@ export type { AdapterInterface, CronJobConfig, CronJobStatus, CronTarget, Regist
 export class CronJobManager {
 	private jobs = new Map<string, RegisteredCronJob>();
 	private cleanupInterval: NodeJS.Timeout | null = null;
+	private triggerStateSubscriptions = new Map<string, string[]>(); // triggerState -> [jobIds]
+	private debounceTimers = new Map<string, NodeJS.Timeout>(); // jobId -> timer
 
 	constructor(private adapter: AdapterInterface) {}
 
@@ -48,6 +50,20 @@ export class CronJobManager {
 				this.adapter.log.debug(`CronJobManager: Stopped job ${jobId}`);
 			}
 		}
+
+		// Clean up all debounce timers
+		for (const [jobId, timer] of this.debounceTimers) {
+			clearTimeout(timer);
+			this.adapter.log.debug(`CronJobManager: Cleaned up debounce timer for job ${jobId}`);
+		}
+		this.debounceTimers.clear();
+
+		// Unsubscribe from all trigger states
+		for (const [triggerState] of this.triggerStateSubscriptions) {
+			this.adapter.unsubscribeStates(triggerState);
+			this.adapter.log.debug(`CronJobManager: Unsubscribed from triggerState ${triggerState}`);
+		}
+		this.triggerStateSubscriptions.clear();
 
 		this.jobs.clear();
 		this.adapter.log.info("CronJobManager: Shutdown complete");
@@ -117,7 +133,12 @@ export class CronJobManager {
 			};
 
 			// Create and start cron task if active and not manual
-			if (validatedConfig.active && validatedConfig.type !== CRON_JOB_TYPE.MANUAL && validatedConfig.cron) {
+			if (
+				validatedConfig.active &&
+				validatedConfig.type !== CRON_JOB_TYPE.MANUAL &&
+				validatedConfig.type !== CRON_JOB_TYPE.STATE &&
+				validatedConfig.cron
+			) {
 				newJob.task = cron.schedule(
 					validatedConfig.cron,
 					() => {
@@ -133,6 +154,18 @@ export class CronJobManager {
 				);
 			} else if (validatedConfig.type === CRON_JOB_TYPE.MANUAL) {
 				this.adapter.log.info(`CronJobManager: Manual job ${jobId} created - trigger only execution`);
+			} else if (validatedConfig.type === CRON_JOB_TYPE.STATE) {
+				// Subscribe to trigger state for STATE jobs
+				if (validatedConfig.active && validatedConfig.triggerState) {
+					this.subscribeToTriggerState(validatedConfig.triggerState, jobId);
+					this.adapter.log.info(
+						`CronJobManager: State-triggered job ${jobId} created - monitoring ${validatedConfig.triggerState}`,
+					);
+				} else {
+					this.adapter.log.info(
+						`CronJobManager: State job ${jobId} created but not active or missing triggerState`,
+					);
+				}
 			} else {
 				this.adapter.log.info(`CronJobManager: Job ${jobId} created but not active`);
 			}
@@ -199,6 +232,20 @@ export class CronJobManager {
 			if (job.task) {
 				job.task.stop();
 			}
+
+			// Clean up STATE job subscriptions and debounce timers
+			if (job.config.type === CRON_JOB_TYPE.STATE && job.config.triggerState) {
+				this.unsubscribeFromTriggerState(job.config.triggerState, jobId);
+			}
+
+			// Clean up debounce timer
+			const debounceTimer = this.debounceTimers.get(jobId);
+			if (debounceTimer) {
+				clearTimeout(debounceTimer);
+				this.debounceTimers.delete(jobId);
+				this.adapter.log.debug(`CronJobManager: Cleaned up debounce timer for job ${jobId}`);
+			}
+
 			this.jobs.delete(jobId);
 			this.adapter.log.info(`CronJobManager: Removed job ${jobId}`);
 		}
@@ -231,6 +278,122 @@ export class CronJobManager {
 	 */
 	public getJobs(): Map<string, RegisteredCronJob> {
 		return new Map(this.jobs);
+	}
+
+	/**
+	 * Subscribe to a trigger state for a job
+	 */
+	private subscribeToTriggerState(triggerState: string, jobId: string): void {
+		const existingJobs = this.triggerStateSubscriptions.get(triggerState) || [];
+
+		// Add jobId if not already present
+		if (!existingJobs.includes(jobId)) {
+			existingJobs.push(jobId);
+			this.triggerStateSubscriptions.set(triggerState, existingJobs);
+			this.adapter.log.debug(`CronJobManager: Added job ${jobId} to triggerState ${triggerState}`);
+		}
+
+		// Subscribe to state if this is the first job using this triggerState
+		if (existingJobs.length === 1) {
+			this.adapter.subscribeStates(triggerState);
+			this.adapter.log.info(`CronJobManager: Subscribed to triggerState ${triggerState}`);
+		}
+	}
+
+	/**
+	 * Unsubscribe from a trigger state for a job
+	 */
+	private unsubscribeFromTriggerState(triggerState: string, jobId: string): void {
+		const existingJobs = this.triggerStateSubscriptions.get(triggerState);
+
+		if (!existingJobs) {
+			return;
+		}
+
+		// Remove jobId from list
+		const updatedJobs = existingJobs.filter((id) => id !== jobId);
+
+		if (updatedJobs.length === 0) {
+			// No more jobs using this triggerState - unsubscribe
+			this.triggerStateSubscriptions.delete(triggerState);
+			this.adapter.unsubscribeStates(triggerState);
+			this.adapter.log.info(`CronJobManager: Unsubscribed from triggerState ${triggerState}`);
+		} else {
+			// Update list with remaining jobs
+			this.triggerStateSubscriptions.set(triggerState, updatedJobs);
+			this.adapter.log.debug(`CronJobManager: Removed job ${jobId} from triggerState ${triggerState}`);
+		}
+	}
+
+	/**
+	 * Get all job IDs that are triggered by a specific state
+	 */
+	public getJobsForTriggerState(triggerState: string): string[] | undefined {
+		return this.triggerStateSubscriptions.get(triggerState);
+	}
+
+	/**
+	 * Check if a state change should trigger a job
+	 */
+	private shouldTrigger(config: CronJobConfig, state: ioBroker.State): boolean {
+		// If triggerValue is set, only trigger when state value matches
+		if (config.triggerValue !== undefined) {
+			return state.val === config.triggerValue;
+		}
+
+		// If triggerOnChange is false, don't trigger (shouldn't happen if triggerValue not set, but check anyway)
+		if (config.triggerOnChange === false) {
+			return false;
+		}
+
+		// Default: trigger on any change
+		return true;
+	}
+
+	/**
+	 * Check and trigger a state job with debouncing
+	 */
+	public checkAndTriggerStateJob(jobId: string, state: ioBroker.State): void {
+		const job = this.jobs.get(jobId);
+		if (!job) {
+			this.adapter.log.warn(`CronJobManager: Job ${jobId} not found for state trigger`);
+			return;
+		}
+
+		// Check if job is active
+		if (!job.config.active) {
+			this.adapter.log.debug(`CronJobManager: Job ${jobId} is not active, skipping trigger`);
+			return;
+		}
+
+		// Check if this state change should trigger the job
+		if (!this.shouldTrigger(job.config, state)) {
+			this.adapter.log.debug(`CronJobManager: State change for ${jobId} does not match trigger conditions`);
+			return;
+		}
+
+		// Apply debouncing
+		const debounceDelay = job.config.debounce || 100; // Default 100ms
+
+		// Clear existing timer if present
+		const existingTimer = this.debounceTimers.get(jobId);
+		if (existingTimer) {
+			clearTimeout(existingTimer);
+			this.adapter.log.debug(`CronJobManager: Cleared existing debounce timer for job ${jobId}`);
+		}
+
+		// Create new timer
+		const timer = setTimeout(() => {
+			this.debounceTimers.delete(jobId);
+			this.executeJob(jobId).catch((error) => {
+				this.adapter.log.error(`CronJobManager: Error executing state-triggered job ${jobId}: ${error}`);
+			});
+		}, debounceDelay);
+
+		this.debounceTimers.set(jobId, timer);
+		this.adapter.log.debug(
+			`CronJobManager: Scheduled state-triggered job ${jobId} with ${debounceDelay}ms debounce`,
+		);
 	}
 
 	/**

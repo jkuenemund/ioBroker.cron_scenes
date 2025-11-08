@@ -26,8 +26,8 @@ export class ConfigValidator {
 			);
 		}
 
-		// Validate cron expression (not required for MANUAL jobs)
-		if (jobType !== CRON_JOB_TYPE.MANUAL) {
+		// Validate cron expression (not required for MANUAL and STATE jobs)
+		if (jobType !== CRON_JOB_TYPE.MANUAL && jobType !== CRON_JOB_TYPE.STATE) {
 			if (!config.cron || typeof config.cron !== "string") {
 				throw new CronJobError(
 					"Cron expression is required and must be a string for scheduled jobs",
@@ -149,11 +149,49 @@ export class ConfigValidator {
 			throw new CronJobError("Active flag must be a boolean", jobId, CRON_ERROR_CODE.CONFIG_INVALID);
 		}
 
+		// Validate STATE job specific fields
+		if (jobType === CRON_JOB_TYPE.STATE) {
+			// triggerState is required for STATE jobs
+			if (!config.triggerState || typeof config.triggerState !== "string") {
+				throw new CronJobError(
+					"triggerState is required and must be a string for STATE jobs",
+					jobId,
+					CRON_ERROR_CODE.CONFIG_INVALID,
+				);
+			}
+
+			// Validate debounce if provided
+			if (config.debounce !== undefined) {
+				if (typeof config.debounce !== "number" || config.debounce < 0 || config.debounce > 60000) {
+					throw new CronJobError(
+						"debounce must be a number between 0 and 60000 milliseconds",
+						jobId,
+						CRON_ERROR_CODE.CONFIG_INVALID,
+					);
+				}
+			}
+
+			// Validate triggerOnChange if provided
+			if (config.triggerOnChange !== undefined && typeof config.triggerOnChange !== "boolean") {
+				throw new CronJobError(
+					"triggerOnChange must be a boolean if provided",
+					jobId,
+					CRON_ERROR_CODE.CONFIG_INVALID,
+				);
+			}
+
+			// triggerValue can be any type (no validation needed)
+		}
+
 		return {
-			cron: jobType !== CRON_JOB_TYPE.MANUAL ? config.cron : undefined,
+			cron: jobType !== CRON_JOB_TYPE.MANUAL && jobType !== CRON_JOB_TYPE.STATE ? config.cron : undefined,
 			targets: validatedTargets,
 			active: config.active,
 			type: jobType,
+			triggerState: config.triggerState,
+			triggerValue: config.triggerValue,
+			triggerOnChange: config.triggerOnChange,
+			debounce: config.debounce,
 		};
 	}
 }

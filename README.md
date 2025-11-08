@@ -19,8 +19,9 @@ Ein ioBroker Adapter zur zeitbasierten Ausführung von Aktionen (Szenen) über C
 
 - ⏰ **Flexible Zeitsteuerung** - Nutzt Cron-Expressions für präzise Zeitplanung
 - 🎯 **Multi-Target Support** - Ein Job kann mehrere States gleichzeitig setzen
-- 🔄 **Verschiedene Job-Typen** - Unterstützt recurring, once und manual Jobs
+- 🔄 **Verschiedene Job-Typen** - Unterstützt recurring, once, manual und state Jobs
 - 🎮 **Manuelle Auslösung** - Jeder Job kann manuell über einen Trigger-Button gestartet werden
+- 🔔 **State-getriggerte Jobs** 🆕 - Jobs werden automatisch ausgeführt, wenn sich ein State ändert
 - 📊 **Status-Überwachung** - Vollständige Überwachung der Job-Ausführung mit Fehlermeldungen
 - 🗂️ **Automatische Ordnerstruktur** - Jobs-Ordner wird automatisch beim ersten Start erstellt
 
@@ -74,12 +75,15 @@ Hier werden alle Ihre Cron-Jobs gespeichert. Ein Beispiel-Job wird automatisch e
 
 ### 📝 Konfigurationsparameter
 
-| Parameter | Typ     | Beschreibung                                                       | Beispiel         |
-| --------- | ------- | ------------------------------------------------------------------ | ---------------- |
-| `cron`    | string  | Cron-Expression für die Zeitsteuerung (optional für `manual` Jobs) | `"0 7 * * 1-5"`  |
-| `targets` | array   | Liste der States die gesetzt werden sollen                         | siehe unten      |
-| `active`  | boolean | Ob der Job aktiv ist                                               | `true` / `false` |
-| `type`    | string  | Job-Typ: `"recurring"`, `"once"` oder `"manual"`                   | `"recurring"`    |
+| Parameter      | Typ     | Beschreibung                                                                   | Beispiel                       |
+| -------------- | ------- | ------------------------------------------------------------------------------ | ------------------------------ |
+| `cron`         | string  | Cron-Expression für die Zeitsteuerung (optional für `manual` und `state` Jobs) | `"0 7 * * 1-5"`                |
+| `targets`      | array   | Liste der States die gesetzt werden sollen                                     | siehe unten                    |
+| `active`       | boolean | Ob der Job aktiv ist                                                           | `true` / `false`               |
+| `type`         | string  | Job-Typ: `"recurring"`, `"once"`, `"manual"` oder `"state"`                    | `"recurring"`                  |
+| `triggerState` | string  | **Für STATE-Jobs:** State-ID die überwacht werden soll (Pflichtfeld)           | `"hm-rpc.0.Bewegung.DETECTED"` |
+| `triggerValue` | any     | **Für STATE-Jobs:** Optional - Nur bei diesem Wert auslösen                    | `true`, `"auto"`, `21`         |
+| `debounce`     | number  | **Für STATE-Jobs:** Optional - Debounce-Verzögerung in ms (Standard: 100)      | `200`                          |
 
 #### Target-Konfiguration
 
@@ -448,6 +452,108 @@ Für Jobs, die nur manuell ausgelöst werden sollen, verwenden Sie den Typ `"man
 - Können über REST-API oder Node-RED ausgelöst werden
 - Unterstützen alle Target-Typen und Delays
 
+### State-getriggerte Jobs (State-Triggered) 🆕
+
+Für Jobs, die automatisch ausgeführt werden, wenn sich ein bestimmter State ändert, verwenden Sie den Typ `"state"`. Diese Jobs benötigen **keine** Cron-Expression:
+
+#### Einfacher State-Trigger
+
+```json
+{
+	"type": "state",
+	"triggerState": "hm-rpc.0.Wohnzimmer.Bewegung.DETECTED",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.STATE",
+			"value": true,
+			"description": "Licht bei Bewegung einschalten"
+		}
+	],
+	"active": true
+}
+```
+
+#### Mit Trigger-Wert (Bedingte Auslösung)
+
+Nur auslösen, wenn der State einen bestimmten Wert hat:
+
+```json
+{
+	"type": "state",
+	"triggerState": "hm-rpc.0.Thermostat.MODE",
+	"triggerValue": "auto",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Heizung.SET_TEMPERATURE",
+			"value": 21,
+			"description": "Heizung auf 21°C wenn Auto-Modus aktiv"
+		}
+	],
+	"active": true
+}
+```
+
+#### Mit Debouncing
+
+Verhindert mehrfaches Auslösen bei schnellen State-Änderungen:
+
+```json
+{
+	"type": "state",
+	"triggerState": "sensor.0.temperature",
+	"debounce": 500,
+	"targets": [
+		{
+			"id": "hm-rpc.0.Heizung.SET_TEMPERATURE",
+			"type": "expression",
+			"value": "Math.max(18, state('sensor.0.temperature') + 2)",
+			"description": "Heizung: mindestens 18°C oder Temperatur + 2°C"
+		}
+	],
+	"active": true
+}
+```
+
+#### Kombiniert: Trigger-Wert + Debouncing
+
+```json
+{
+	"type": "state",
+	"triggerState": "hm-rpc.0.Tür.STATE",
+	"triggerValue": true,
+	"debounce": 200,
+	"targets": [
+		{
+			"id": "hm-rpc.0.Flur.Licht.STATE",
+			"value": true,
+			"description": "Flurlicht bei Türöffnung"
+		},
+		{
+			"id": "hm-rpc.0.Flur.Licht.LEVEL",
+			"value": 80,
+			"description": "Helligkeit auf 80%"
+		}
+	],
+	"active": true
+}
+```
+
+✅ **Vorteile von State-getriggerten Jobs:**
+
+- Reaktive Automatisierungen ohne Cron-Expressions
+- Sofortige Reaktion auf State-Änderungen
+- Bedingte Auslösung mit `triggerValue`
+- Debouncing verhindert Performance-Probleme bei häufigen Änderungen
+- Unterstützen alle Target-Typen (value, state, expression)
+- Selektives Subscribing - nur benötigte States werden überwacht
+
+⚠️ **Performance-Hinweise:**
+
+- State-getriggerte Jobs verwenden selektives Subscribing (nur `triggerState`-IDs)
+- Bei vielen STATE-Jobs (>50) kann die CPU-Belastung steigen
+- Verwenden Sie `debounce` für States mit häufigen Änderungen (z.B. Temperatursensoren)
+- Empfohlener Debounce-Wert: 100-500ms je nach Anwendungsfall
+
 ## 🔧 Konfigurationsoptionen
 
 In der Adapter-Konfiguration können Sie folgende Parameter einstellen:
@@ -578,15 +684,20 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 
+### 0.5.0 (2025-11-08)
+
+- (kuen_je) Feature: State-getriggerte Jobs hinzugefügt - Jobs werden automatisch ausgeführt, wenn sich ein bestimmter State ändert
+- (kuen_je) Feature: Bedingte Auslösung mit `triggerValue` - Jobs können nur bei bestimmten Werten ausgelöst werden
+- (kuen_je) Feature: Debouncing für STATE-Jobs - Verhindert mehrfaches Auslösen bei schnellen State-Änderungen
+- (kuen_je) Feature: Selektives State-Subscribing - Nur benötigte States werden abonniert für optimale Performance
+- (kuen_je) Feature: Automatisches Cleanup von Subscriptions und Debounce-Timers beim Shutdown
+- (kuen_je) Added: Beispiel-Konfiguration für state-getriggerte Jobs
+
 ### 0.4.1 (2025-11-05)
 
 - (kuen_je) Fixed: CRON expressions with day-of-week ranges 1-7 or 0-7 are now automatically normalized to work correctly with node-cron timezone option
 - (kuen_je) Fixed: Added validation with cron-parser to ensure consistency between both cron libraries
-- (kuen*je) Improved: Automatic normalization of problematic day-of-week ranges (1-7 → *, 0-7 → \_, 7 → 0)
-
-### **WORK IN PROGRESS**
-
-- Placeholder for future changes
+- (kuen_je) Improved: Automatic normalization of problematic day-of-week ranges (1-7 → \*, 0-7 → \_, 7 → 0)
 
 ### 0.4.0 (2025-11-05)
 

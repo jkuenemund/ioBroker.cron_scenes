@@ -68,6 +68,20 @@ const EXAMPLE_JOBS = {
       }
     ],
     type: import_constants.CRON_JOB_TYPE.MANUAL
+  },
+  state: {
+    triggerState: "cron_scenes.0.testVariable",
+    triggerValue: true,
+    debounce: 200,
+    targets: [
+      {
+        id: "cron_scenes.0.testVariable2",
+        type: "value",
+        value: true,
+        description: "State-triggered - set testVariable2 when testVariable becomes true"
+      }
+    ],
+    type: import_constants.CRON_JOB_TYPE.STATE
   }
 };
 function createExampleJobConfig(type, active) {

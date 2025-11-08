@@ -1,8 +1,12 @@
 {
 	"common": {
 		"name": "cron_scenes",
-    "version": "0.4.1",
+		"version": "0.5.0",
 		"news": {
+			"0.5.0": {
+				"en": "* Feature: State-triggered jobs - Jobs are automatically executed when a specific state changes\n* Feature: Conditional triggering with triggerValue - Jobs can be triggered only when state equals a specific value\n* Feature: Debouncing for STATE jobs - Prevents multiple triggers on rapid state changes\n* Feature: Selective state subscribing - Only required states are subscribed for optimal performance\n* Feature: Automatic cleanup of subscriptions and debounce timers on shutdown\n* Added example state-triggered job configuration",
+				"de": "* Feature: State-getriggerte Jobs - Jobs werden automatisch ausgeführt, wenn sich ein bestimmter State ändert\n* Feature: Bedingte Auslösung mit triggerValue - Jobs können nur bei bestimmten Werten ausgelöst werden\n* Feature: Debouncing für STATE-Jobs - Verhindert mehrfaches Auslösen bei schnellen State-Änderungen\n* Feature: Selektives State-Subscribing - Nur benötigte States werden abonniert für optimale Performance\n* Feature: Automatisches Cleanup von Subscriptions und Debounce-Timers beim Shutdown\n* Hinzugefügt: Beispiel-Konfiguration für state-getriggerte Jobs"
+			},
 			"0.4.1": {
 				"en": "* Fixed: CRON expressions with day-of-week ranges 1-7 or 0-7 are now automatically normalized to work correctly with node-cron timezone option\n* Fixed: Added validation with cron-parser to ensure consistency between both cron libraries\n* Improved: Automatic normalization of problematic day-of-week ranges (1-7 → *, 0-7 → *, 7 → 0)",
 				"de": "* Behoben: CRON-Expressions mit Wochentag-Bereichen 1-7 oder 0-7 werden jetzt automatisch normalisiert, um korrekt mit der node-cron Zeitzone-Option zu funktionieren\n* Behoben: Validierung mit cron-parser hinzugefügt, um Konsistenz zwischen beiden Cron-Bibliotheken sicherzustellen\n* Verbessert: Automatische Normalisierung problematischer Wochentag-Bereiche (1-7 → *, 0-7 → *, 7 → 0)"

@@ -49,12 +49,27 @@ export const EXAMPLE_JOBS = {
 		],
 		type: CRON_JOB_TYPE.MANUAL,
 	},
+
+	state: {
+		triggerState: "cron_scenes.0.testVariable",
+		triggerValue: true,
+		debounce: 200,
+		targets: [
+			{
+				id: "cron_scenes.0.testVariable2",
+				type: "value",
+				value: true,
+				description: "State-triggered - set testVariable2 when testVariable becomes true",
+			},
+		],
+		type: CRON_JOB_TYPE.STATE,
+	},
 } as const;
 
 /**
  * Create example job configuration
  */
-export function createExampleJobConfig(type: keyof typeof EXAMPLE_JOBS, active: boolean) {
+export function createExampleJobConfig(type: keyof typeof EXAMPLE_JOBS, active: boolean): any {
 	return {
 		...EXAMPLE_JOBS[type],
 		active,

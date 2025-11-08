@@ -32,7 +32,8 @@ const CRON_JOB_STATUS = {
 const CRON_JOB_TYPE = {
   ONCE: "once",
   RECURRING: "recurring",
-  MANUAL: "manual"
+  MANUAL: "manual",
+  STATE: "state"
 };
 const CRON_TARGET_TYPE = {
   VALUE: "value",

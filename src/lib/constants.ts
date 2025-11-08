@@ -11,6 +11,7 @@ export const CRON_JOB_TYPE = {
 	ONCE: "once",
 	RECURRING: "recurring",
 	MANUAL: "manual",
+	STATE: "state",
 } as const;
 
 export const CRON_TARGET_TYPE = {

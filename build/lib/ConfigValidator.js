@@ -51,7 +51,7 @@ class ConfigValidator {
         import_constants.CRON_ERROR_CODE.CONFIG_INVALID
       );
     }
-    if (jobType !== import_constants.CRON_JOB_TYPE.MANUAL) {
+    if (jobType !== import_constants.CRON_JOB_TYPE.MANUAL && jobType !== import_constants.CRON_JOB_TYPE.STATE) {
       if (!config.cron || typeof config.cron !== "string") {
         throw new import_errors.CronJobError(
           "Cron expression is required and must be a string for scheduled jobs",
@@ -146,11 +146,40 @@ class ConfigValidator {
     if (typeof config.active !== "boolean") {
       throw new import_errors.CronJobError("Active flag must be a boolean", jobId, import_constants.CRON_ERROR_CODE.CONFIG_INVALID);
     }
+    if (jobType === import_constants.CRON_JOB_TYPE.STATE) {
+      if (!config.triggerState || typeof config.triggerState !== "string") {
+        throw new import_errors.CronJobError(
+          "triggerState is required and must be a string for STATE jobs",
+          jobId,
+          import_constants.CRON_ERROR_CODE.CONFIG_INVALID
+        );
+      }
+      if (config.debounce !== void 0) {
+        if (typeof config.debounce !== "number" || config.debounce < 0 || config.debounce > 6e4) {
+          throw new import_errors.CronJobError(
+            "debounce must be a number between 0 and 60000 milliseconds",
+            jobId,
+            import_constants.CRON_ERROR_CODE.CONFIG_INVALID
+          );
+        }
+      }
+      if (config.triggerOnChange !== void 0 && typeof config.triggerOnChange !== "boolean") {
+        throw new import_errors.CronJobError(
+          "triggerOnChange must be a boolean if provided",
+          jobId,
+          import_constants.CRON_ERROR_CODE.CONFIG_INVALID
+        );
+      }
+    }
     return {
-      cron: jobType !== import_constants.CRON_JOB_TYPE.MANUAL ? config.cron : void 0,
+      cron: jobType !== import_constants.CRON_JOB_TYPE.MANUAL && jobType !== import_constants.CRON_JOB_TYPE.STATE ? config.cron : void 0,
       targets: validatedTargets,
       active: config.active,
-      type: jobType
+      type: jobType,
+      triggerState: config.triggerState,
+      triggerValue: config.triggerValue,
+      triggerOnChange: config.triggerOnChange,
+      debounce: config.debounce
     };
   }
 }

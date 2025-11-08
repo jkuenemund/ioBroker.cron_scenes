@@ -17,10 +17,15 @@ export interface CronTarget {
  * Interface for a cron job configuration
  */
 export interface CronJobConfig {
-	cron?: string; // Optional for MANUAL jobs
+	cron?: string; // Optional for MANUAL and STATE jobs
 	targets: CronTarget[];
 	active: boolean;
 	type: CronJobTypeType;
+	// Fields for STATE jobs
+	triggerState?: string; // Required for STATE jobs - State ID to monitor
+	triggerValue?: any; // Optional - Only trigger when state equals this value
+	triggerOnChange?: boolean; // Optional - Trigger on any change (default: true)
+	debounce?: number; // Optional - Debounce delay in ms (default: 100)
 }
 
 /**
@@ -60,5 +65,7 @@ export interface AdapterInterface {
 	setObjectAsync: (id: string, obj: any) => any;
 	delObjectAsync: (id: string) => any;
 	getObjectListAsync: (options: any) => any;
+	subscribeStates: (pattern: string) => void;
+	unsubscribeStates: (pattern: string) => void;
 	namespace: string;
 }

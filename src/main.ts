@@ -181,7 +181,23 @@ class CronScenes extends utils.Adapter {
 					native: {},
 				});
 
+				// Create a state-triggered job example
+				const stateJobId = `${cronFolder}.stateExample`;
+				await this.setObjectNotExistsAsync(stateJobId, {
+					type: "state",
+					common: {
+						name: "State-Triggered Job Example",
+						type: "string",
+						role: "json",
+						read: true,
+						write: true,
+						desc: "Example state-triggered job configuration - automatically executed when triggerState changes",
+					},
+					native: {},
+				});
+
 				const manualConfig = createExampleJobConfig("manual", this.config.defaultJobsActive || false);
+				const stateConfig = createExampleJobConfig("state", this.config.defaultJobsActive || false);
 
 				this.setState(exampleJobId, {
 					val: JSON.stringify(exampleConfig, null, 2),
@@ -193,9 +209,15 @@ class CronScenes extends utils.Adapter {
 					ack: true,
 				});
 
+				this.setState(stateJobId, {
+					val: JSON.stringify(stateConfig, null, 2),
+					ack: true,
+				});
+
 				this.log.info(`Jobs folder created at: ${cronFolder}`);
 				this.log.info(`Example job created at: ${exampleJobId}`);
 				this.log.info(`Manual job example created at: ${manualJobId}`);
+				this.log.info(`State-triggered job example created at: ${stateJobId}`);
 			} else {
 				this.log.info(`Jobs folder created at: ${cronFolder}`);
 				this.log.info("Example jobs creation is disabled in adapter configuration");
@@ -283,6 +305,15 @@ class CronScenes extends utils.Adapter {
 				this.cronJobManager.handleJobStateChange(id, state).catch((error) => {
 					this.log.error(`Error handling job state change for ${id}: ${error}`);
 				});
+				return;
+			}
+
+			// Check if this state change triggers any STATE jobs
+			const jobs = this.cronJobManager.getJobsForTriggerState(id);
+			if (jobs && jobs.length > 0) {
+				for (const jobId of jobs) {
+					this.cronJobManager.checkAndTriggerStateJob(jobId, state);
+				}
 			}
 		} else {
 			// The state was deleted
