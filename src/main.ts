@@ -117,6 +117,9 @@ class CronScenes extends utils.Adapter {
 		// Start CronJobManager
 		this.cronJobManager.initialize();
 
+		// Load existing jobs from the configured folder
+		await this.cronJobManager.loadExistingJobs(cronFolder);
+
 		// Subscribe to job states in the configured folder
 		this.subscribeStates(`${cronFolder}.*`);
 	}

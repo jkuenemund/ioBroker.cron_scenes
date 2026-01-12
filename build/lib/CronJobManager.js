@@ -60,6 +60,71 @@ class CronJobManager {
     this.startPeriodicCleanup();
   }
   /**
+   * Load all existing jobs from the configured folder
+   */
+  async loadExistingJobs(cronFolder) {
+    try {
+      this.adapter.log.info(`CronJobManager: Loading existing jobs from ${cronFolder}...`);
+      const objects = await this.adapter.getObjectListAsync({
+        startkey: cronFolder,
+        endkey: cronFolder + "\u9999"
+      });
+      let loadedCount = 0;
+      let skippedCount = 0;
+      for (const obj of objects.rows) {
+        const objId = obj.id;
+        if (objId === cronFolder) {
+          continue;
+        }
+        if (objId.endsWith(".status") || objId.endsWith(".trigger")) {
+          continue;
+        }
+        const relativePath = objId.replace(cronFolder + ".", "");
+        if (relativePath.includes(".")) {
+          continue;
+        }
+        try {
+          const objectInfo = await this.adapter.getObjectAsync(objId);
+          if (!objectInfo || objectInfo.type !== "state") {
+            continue;
+          }
+        } catch (error) {
+          this.adapter.log.debug(`CronJobManager: Could not get object info for ${objId}, skipping`);
+          continue;
+        }
+        try {
+          const state = await this.adapter.getStateAsync(objId);
+          if (!state || !state.val) {
+            this.adapter.log.debug(`CronJobManager: Job ${objId} has no configuration, skipping`);
+            skippedCount++;
+            continue;
+          }
+          let config;
+          try {
+            config = JSON.parse(state.val);
+          } catch (parseError) {
+            this.adapter.log.warn(
+              `CronJobManager: Invalid JSON configuration for job ${objId}, skipping: ${parseError}`
+            );
+            skippedCount++;
+            continue;
+          }
+          await this.addOrUpdateJob(objId, config);
+          loadedCount++;
+          this.adapter.log.debug(`CronJobManager: Loaded job ${objId}`);
+        } catch (error) {
+          this.adapter.log.error(`CronJobManager: Error loading job ${objId}: ${error}`);
+          skippedCount++;
+        }
+      }
+      this.adapter.log.info(
+        `CronJobManager: Finished loading jobs - ${loadedCount} loaded, ${skippedCount} skipped`
+      );
+    } catch (error) {
+      this.adapter.log.error(`CronJobManager: Error loading existing jobs: ${error}`);
+    }
+  }
+  /**
    * Shutdown the cron job manager
    */
   async shutdown() {

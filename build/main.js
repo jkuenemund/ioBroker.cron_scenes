@@ -88,6 +88,7 @@ class CronScenes extends utils.Adapter {
     const cronFolder = this.config.cronFolder || `${this.namespace}.jobs`;
     await this.createJobsFolder(cronFolder);
     this.cronJobManager.initialize();
+    await this.cronJobManager.loadExistingJobs(cronFolder);
     this.subscribeStates(`${cronFolder}.*`);
   }
   /**

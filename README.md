@@ -684,6 +684,11 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 
+### 0.5.1 (2025-01-XX)
+
+- (kuen_je) Fixed: Jobs werden beim Adapter-Neustart automatisch geladen und gestartet
+- (kuen_je) Feature: Neue Funktion `loadExistingJobs()` im CronJobManager zum Laden vorhandener Jobs beim Start
+
 ### 0.5.0 (2025-11-08)
 
 - (kuen_je) Feature: State-getriggerte Jobs hinzugefügt - Jobs werden automatisch ausgeführt, wenn sich ein bestimmter State ändert

@@ -1,8 +1,12 @@
 {
 	"common": {
 		"name": "cron_scenes",
-		"version": "0.5.0",
+		"version": "0.5.1",
 		"news": {
+			"0.5.1": {
+				"en": "* Fixed: Jobs are now automatically loaded and started when the adapter restarts\n* Feature: Added loadExistingJobs() function to CronJobManager to load existing jobs on startup",
+				"de": "* Behoben: Jobs werden beim Adapter-Neustart automatisch geladen und gestartet\n* Feature: Neue Funktion loadExistingJobs() im CronJobManager zum Laden vorhandener Jobs beim Start"
+			},
 			"0.5.0": {
 				"en": "* Feature: State-triggered jobs - Jobs are automatically executed when a specific state changes\n* Feature: Conditional triggering with triggerValue - Jobs can be triggered only when state equals a specific value\n* Feature: Debouncing for STATE jobs - Prevents multiple triggers on rapid state changes\n* Feature: Selective state subscribing - Only required states are subscribed for optimal performance\n* Feature: Automatic cleanup of subscriptions and debounce timers on shutdown\n* Added example state-triggered job configuration",
 				"de": "* Feature: State-getriggerte Jobs - Jobs werden automatisch ausgeführt, wenn sich ein bestimmter State ändert\n* Feature: Bedingte Auslösung mit triggerValue - Jobs können nur bei bestimmten Werten ausgelöst werden\n* Feature: Debouncing für STATE-Jobs - Verhindert mehrfaches Auslösen bei schnellen State-Änderungen\n* Feature: Selektives State-Subscribing - Nur benötigte States werden abonniert für optimale Performance\n* Feature: Automatisches Cleanup von Subscriptions und Debounce-Timers beim Shutdown\n* Hinzugefügt: Beispiel-Konfiguration für state-getriggerte Jobs"
