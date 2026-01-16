@@ -33,7 +33,8 @@ const CRON_JOB_TYPE = {
   ONCE: "once",
   RECURRING: "recurring",
   MANUAL: "manual",
-  STATE: "state"
+  STATE: "state",
+  TIMER: "timer"
 };
 const CRON_TARGET_TYPE = {
   VALUE: "value",

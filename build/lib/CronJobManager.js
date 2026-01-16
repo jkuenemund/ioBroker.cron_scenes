@@ -42,7 +42,7 @@ var import_ConfigValidator = require("./ConfigValidator");
 var import_constants = require("./constants");
 var import_errors = require("./errors");
 class CronJobManager {
-  // jobId -> timer
+  // jobId -> timer (for TIMER jobs)
   constructor(adapter) {
     this.adapter = adapter;
   }
@@ -51,6 +51,8 @@ class CronJobManager {
   triggerStateSubscriptions = /* @__PURE__ */ new Map();
   // triggerState -> [jobIds]
   debounceTimers = /* @__PURE__ */ new Map();
+  // jobId -> timer
+  timers = /* @__PURE__ */ new Map();
   /**
    * Initialize the cron job manager
    */
@@ -144,6 +146,11 @@ class CronJobManager {
       this.adapter.log.debug(`CronJobManager: Cleaned up debounce timer for job ${jobId}`);
     }
     this.debounceTimers.clear();
+    for (const [jobId, timer] of this.timers) {
+      clearTimeout(timer);
+      this.adapter.log.debug(`CronJobManager: Cleaned up timer for job ${jobId}`);
+    }
+    this.timers.clear();
     for (const [triggerState] of this.triggerStateSubscriptions) {
       this.adapter.unsubscribeStates(triggerState);
       this.adapter.log.debug(`CronJobManager: Unsubscribed from triggerState ${triggerState}`);
@@ -162,6 +169,12 @@ class CronJobManager {
       const existingJob = this.jobs.get(jobId);
       if (existingJob == null ? void 0 : existingJob.task) {
         existingJob.task.stop();
+      }
+      const existingTimer = this.timers.get(jobId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        this.timers.delete(jobId);
+        this.adapter.log.debug(`CronJobManager: Stopped existing timer for job ${jobId}`);
       }
       let existingLastRun;
       try {
@@ -189,6 +202,10 @@ class CronJobManager {
         } else {
           nextRun = this.getNextRunTime(validatedConfig.cron);
         }
+      } else if (validatedConfig.active && validatedConfig.type === import_constants.CRON_JOB_TYPE.TIMER && validatedConfig.delay) {
+        const now = /* @__PURE__ */ new Date();
+        const nextRunDate = new Date(now.getTime() + validatedConfig.delay * 1e3);
+        nextRun = this.toMEZ(nextRunDate);
       }
       const newJob = {
         id: jobId,
@@ -200,7 +217,7 @@ class CronJobManager {
           nextRun
         }
       };
-      if (validatedConfig.active && validatedConfig.type !== import_constants.CRON_JOB_TYPE.MANUAL && validatedConfig.type !== import_constants.CRON_JOB_TYPE.STATE && validatedConfig.cron) {
+      if (validatedConfig.active && validatedConfig.type !== import_constants.CRON_JOB_TYPE.MANUAL && validatedConfig.type !== import_constants.CRON_JOB_TYPE.STATE && validatedConfig.type !== import_constants.CRON_JOB_TYPE.TIMER && validatedConfig.cron) {
         newJob.task = cron.schedule(
           validatedConfig.cron,
           () => {
@@ -226,6 +243,22 @@ class CronJobManager {
           this.adapter.log.info(
             `CronJobManager: State job ${jobId} created but not active or missing triggerState`
           );
+        }
+      } else if (validatedConfig.type === import_constants.CRON_JOB_TYPE.TIMER) {
+        if (validatedConfig.active && validatedConfig.delay) {
+          const delayMs = validatedConfig.delay * 1e3;
+          const timer = setTimeout(() => {
+            this.timers.delete(jobId);
+            this.executeJob(jobId).catch((error) => {
+              this.adapter.log.error(`CronJobManager: Error executing timer job ${jobId}: ${error}`);
+            });
+          }, delayMs);
+          this.timers.set(jobId, timer);
+          this.adapter.log.info(
+            `CronJobManager: Started timer job ${jobId} with delay ${validatedConfig.delay} seconds`
+          );
+        } else {
+          this.adapter.log.info(`CronJobManager: Timer job ${jobId} created but not active or missing delay`);
         }
       } else {
         this.adapter.log.info(`CronJobManager: Job ${jobId} created but not active`);
@@ -296,6 +329,12 @@ class CronJobManager {
         clearTimeout(debounceTimer);
         this.debounceTimers.delete(jobId);
         this.adapter.log.debug(`CronJobManager: Cleaned up debounce timer for job ${jobId}`);
+      }
+      const timer = this.timers.get(jobId);
+      if (timer) {
+        clearTimeout(timer);
+        this.timers.delete(jobId);
+        this.adapter.log.debug(`CronJobManager: Cleaned up timer for job ${jobId}`);
       }
       this.jobs.delete(jobId);
       this.adapter.log.info(`CronJobManager: Removed job ${jobId}`);
@@ -526,6 +565,19 @@ class CronJobManager {
         }
         status.nextRun = void 0;
         await this.updateJobStatus(jobId, status);
+        await this.updateJobConfigState(jobId, job.config);
+      }
+      if (job.config.type === import_constants.CRON_JOB_TYPE.TIMER) {
+        this.adapter.log.info(`CronJobManager: Timer job ${jobId} completed, deactivating`);
+        job.config.active = false;
+        const timer = this.timers.get(jobId);
+        if (timer) {
+          clearTimeout(timer);
+          this.timers.delete(jobId);
+        }
+        status.nextRun = void 0;
+        await this.updateJobStatus(jobId, status);
+        await this.updateJobConfigState(jobId, job.config);
       }
       this.adapter.log.info(`CronJobManager: Job ${jobId} executed successfully`);
     } catch (error) {
@@ -607,6 +659,20 @@ class CronJobManager {
       });
     } catch (error) {
       this.adapter.log.error(`CronJobManager: Error updating status for job ${jobId}: ${error}`);
+    }
+  }
+  /**
+   * Update job configuration state (to persist active flag changes)
+   */
+  async updateJobConfigState(jobId, config) {
+    try {
+      await this.adapter.setForeignStateAsync(jobId, {
+        val: JSON.stringify(config, null, 2),
+        ack: true
+      });
+      this.adapter.log.debug(`CronJobManager: Updated job configuration state for ${jobId}`);
+    } catch (error) {
+      this.adapter.log.error(`CronJobManager: Error updating job configuration state for ${jobId}: ${error}`);
     }
   }
   /**

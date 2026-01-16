@@ -51,7 +51,7 @@ class ConfigValidator {
         import_constants.CRON_ERROR_CODE.CONFIG_INVALID
       );
     }
-    if (jobType !== import_constants.CRON_JOB_TYPE.MANUAL && jobType !== import_constants.CRON_JOB_TYPE.STATE) {
+    if (jobType !== import_constants.CRON_JOB_TYPE.MANUAL && jobType !== import_constants.CRON_JOB_TYPE.STATE && jobType !== import_constants.CRON_JOB_TYPE.TIMER) {
       if (!config.cron || typeof config.cron !== "string") {
         throw new import_errors.CronJobError(
           "Cron expression is required and must be a string for scheduled jobs",
@@ -171,15 +171,39 @@ class ConfigValidator {
         );
       }
     }
+    if (jobType === import_constants.CRON_JOB_TYPE.TIMER) {
+      if (config.delay === void 0 || typeof config.delay !== "number") {
+        throw new import_errors.CronJobError(
+          "delay is required and must be a number (in seconds) for TIMER jobs",
+          jobId,
+          import_constants.CRON_ERROR_CODE.CONFIG_INVALID
+        );
+      }
+      if (config.delay <= 0 || config.delay > 86400) {
+        throw new import_errors.CronJobError(
+          "delay must be a positive number between 1 and 86400 seconds (24 hours)",
+          jobId,
+          import_constants.CRON_ERROR_CODE.CONFIG_INVALID
+        );
+      }
+      if (config.cron !== void 0) {
+        throw new import_errors.CronJobError(
+          "cron expression is not allowed for TIMER jobs (use delay instead)",
+          jobId,
+          import_constants.CRON_ERROR_CODE.CONFIG_INVALID
+        );
+      }
+    }
     return {
-      cron: jobType !== import_constants.CRON_JOB_TYPE.MANUAL && jobType !== import_constants.CRON_JOB_TYPE.STATE ? config.cron : void 0,
+      cron: jobType !== import_constants.CRON_JOB_TYPE.MANUAL && jobType !== import_constants.CRON_JOB_TYPE.STATE && jobType !== import_constants.CRON_JOB_TYPE.TIMER ? config.cron : void 0,
       targets: validatedTargets,
       active: config.active,
       type: jobType,
       triggerState: config.triggerState,
       triggerValue: config.triggerValue,
       triggerOnChange: config.triggerOnChange,
-      debounce: config.debounce
+      debounce: config.debounce,
+      delay: config.delay
     };
   }
 }

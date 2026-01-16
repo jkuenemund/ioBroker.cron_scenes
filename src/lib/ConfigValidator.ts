@@ -26,8 +26,8 @@ export class ConfigValidator {
 			);
 		}
 
-		// Validate cron expression (not required for MANUAL and STATE jobs)
-		if (jobType !== CRON_JOB_TYPE.MANUAL && jobType !== CRON_JOB_TYPE.STATE) {
+		// Validate cron expression (not required for MANUAL, STATE, and TIMER jobs)
+		if (jobType !== CRON_JOB_TYPE.MANUAL && jobType !== CRON_JOB_TYPE.STATE && jobType !== CRON_JOB_TYPE.TIMER) {
 			if (!config.cron || typeof config.cron !== "string") {
 				throw new CronJobError(
 					"Cron expression is required and must be a string for scheduled jobs",
@@ -183,8 +183,41 @@ export class ConfigValidator {
 			// triggerValue can be any type (no validation needed)
 		}
 
+		// Validate TIMER job specific fields
+		if (jobType === CRON_JOB_TYPE.TIMER) {
+			// delay is required for TIMER jobs
+			if (config.delay === undefined || typeof config.delay !== "number") {
+				throw new CronJobError(
+					"delay is required and must be a number (in seconds) for TIMER jobs",
+					jobId,
+					CRON_ERROR_CODE.CONFIG_INVALID,
+				);
+			}
+
+			// Validate delay value
+			if (config.delay <= 0 || config.delay > 86400) {
+				throw new CronJobError(
+					"delay must be a positive number between 1 and 86400 seconds (24 hours)",
+					jobId,
+					CRON_ERROR_CODE.CONFIG_INVALID,
+				);
+			}
+
+			// cron is not allowed for TIMER jobs (they use relative time)
+			if (config.cron !== undefined) {
+				throw new CronJobError(
+					"cron expression is not allowed for TIMER jobs (use delay instead)",
+					jobId,
+					CRON_ERROR_CODE.CONFIG_INVALID,
+				);
+			}
+		}
+
 		return {
-			cron: jobType !== CRON_JOB_TYPE.MANUAL && jobType !== CRON_JOB_TYPE.STATE ? config.cron : undefined,
+			cron:
+				jobType !== CRON_JOB_TYPE.MANUAL && jobType !== CRON_JOB_TYPE.STATE && jobType !== CRON_JOB_TYPE.TIMER
+					? config.cron
+					: undefined,
 			targets: validatedTargets,
 			active: config.active,
 			type: jobType,
@@ -192,6 +225,7 @@ export class ConfigValidator {
 			triggerValue: config.triggerValue,
 			triggerOnChange: config.triggerOnChange,
 			debounce: config.debounce,
+			delay: config.delay,
 		};
 	}
 }

@@ -82,6 +82,19 @@ const EXAMPLE_JOBS = {
       }
     ],
     type: import_constants.CRON_JOB_TYPE.STATE
+  },
+  timer: {
+    delay: 300,
+    // 5 minutes in seconds
+    targets: [
+      {
+        id: "cron_scenes.0.testVariable",
+        type: "value",
+        value: false,
+        description: "Timer job - set testVariable to false after 5 minutes"
+      }
+    ],
+    type: import_constants.CRON_JOB_TYPE.TIMER
   }
 };
 function createExampleJobConfig(type, active) {

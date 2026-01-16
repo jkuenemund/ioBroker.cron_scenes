@@ -1,8 +1,12 @@
 {
 	"common": {
 		"name": "cron_scenes",
-		"version": "0.5.1",
+		"version": "0.6.0",
 		"news": {
+			"0.6.0": {
+				"en": "* Feature: Timer jobs - Jobs can be executed after a relative delay (in seconds)\n* Feature: Timer jobs support manual triggering and automatic activation by STATE jobs\n* Fixed: ONCE and TIMER jobs are now properly deactivated after execution (state is persisted)\n* Fixed: Job configuration state is now updated when jobs are deactivated to prevent re-activation on restart",
+				"de": "* Feature: Timer-Jobs - Jobs können nach einer relativen Verzögerung (in Sekunden) ausgeführt werden\n* Feature: Timer-Jobs unterstützen manuelle Auslösung und automatische Aktivierung durch STATE-Jobs\n* Behoben: ONCE- und TIMER-Jobs werden nach Ausführung korrekt deaktiviert (State wird persistiert)\n* Behoben: Job-Konfigurations-State wird jetzt aktualisiert, wenn Jobs deaktiviert werden, um Reaktivierung beim Neustart zu verhindern"
+			},
 			"0.5.1": {
 				"en": "* Fixed: Jobs are now automatically loaded and started when the adapter restarts\n* Feature: Added loadExistingJobs() function to CronJobManager to load existing jobs on startup",
 				"de": "* Behoben: Jobs werden beim Adapter-Neustart automatisch geladen und gestartet\n* Feature: Neue Funktion loadExistingJobs() im CronJobManager zum Laden vorhandener Jobs beim Start"

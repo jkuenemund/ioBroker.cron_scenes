@@ -17,7 +17,7 @@ export interface CronTarget {
  * Interface for a cron job configuration
  */
 export interface CronJobConfig {
-	cron?: string; // Optional for MANUAL and STATE jobs
+	cron?: string; // Optional for MANUAL, STATE, and TIMER jobs
 	targets: CronTarget[];
 	active: boolean;
 	type: CronJobTypeType;
@@ -26,6 +26,8 @@ export interface CronJobConfig {
 	triggerValue?: any; // Optional - Only trigger when state equals this value
 	triggerOnChange?: boolean; // Optional - Trigger on any change (default: true)
 	debounce?: number; // Optional - Debounce delay in ms (default: 100)
+	// Fields for TIMER jobs
+	delay?: number; // Required for TIMER jobs - Delay in seconds before execution
 }
 
 /**

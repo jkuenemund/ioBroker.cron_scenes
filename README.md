@@ -19,7 +19,7 @@ Ein ioBroker Adapter zur zeitbasierten Ausführung von Aktionen (Szenen) über C
 
 - ⏰ **Flexible Zeitsteuerung** - Nutzt Cron-Expressions für präzise Zeitplanung
 - 🎯 **Multi-Target Support** - Ein Job kann mehrere States gleichzeitig setzen
-- 🔄 **Verschiedene Job-Typen** - Unterstützt recurring, once, manual und state Jobs
+- 🔄 **Verschiedene Job-Typen** - Unterstützt recurring, once, manual, state und timer Jobs
 - 🎮 **Manuelle Auslösung** - Jeder Job kann manuell über einen Trigger-Button gestartet werden
 - 🔔 **State-getriggerte Jobs** 🆕 - Jobs werden automatisch ausgeführt, wenn sich ein State ändert
 - 📊 **Status-Überwachung** - Vollständige Überwachung der Job-Ausführung mit Fehlermeldungen
@@ -80,10 +80,11 @@ Hier werden alle Ihre Cron-Jobs gespeichert. Ein Beispiel-Job wird automatisch e
 | `cron`         | string  | Cron-Expression für die Zeitsteuerung (optional für `manual` und `state` Jobs) | `"0 7 * * 1-5"`                |
 | `targets`      | array   | Liste der States die gesetzt werden sollen                                     | siehe unten                    |
 | `active`       | boolean | Ob der Job aktiv ist                                                           | `true` / `false`               |
-| `type`         | string  | Job-Typ: `"recurring"`, `"once"`, `"manual"` oder `"state"`                    | `"recurring"`                  |
+| `type`         | string  | Job-Typ: `"recurring"`, `"once"`, `"manual"`, `"state"` oder `"timer"`        | `"recurring"`                  |
 | `triggerState` | string  | **Für STATE-Jobs:** State-ID die überwacht werden soll (Pflichtfeld)           | `"hm-rpc.0.Bewegung.DETECTED"` |
 | `triggerValue` | any     | **Für STATE-Jobs:** Optional - Nur bei diesem Wert auslösen                    | `true`, `"auto"`, `21`         |
 | `debounce`     | number  | **Für STATE-Jobs:** Optional - Debounce-Verzögerung in ms (Standard: 100)      | `200`                          |
+| `delay`        | number  | **Für TIMER-Jobs:** Verzögerung in Sekunden vor Ausführung (Pflichtfeld)      | `300` (5 Minuten)              |
 
 #### Target-Konfiguration
 
@@ -554,6 +555,103 @@ Verhindert mehrfaches Auslösen bei schnellen State-Änderungen:
 - Verwenden Sie `debounce` für States mit häufigen Änderungen (z.B. Temperatursensoren)
 - Empfohlener Debounce-Wert: 100-500ms je nach Anwendungsfall
 
+### Timer-Jobs (Timer) 🆕
+
+Für Jobs, die nach einer konfigurierten Verzögerung (in Sekunden) ausgelöst werden sollen, verwenden Sie den Typ `"timer"`. Diese Jobs benötigen **keine** Cron-Expression:
+
+#### Einfacher Timer-Job
+
+```json
+{
+	"type": "timer",
+	"delay": 300,
+	"targets": [
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.STATE",
+			"value": false,
+			"description": "Licht nach 5 Minuten ausschalten"
+		}
+	],
+	"active": true
+}
+```
+
+#### Timer mit mehreren Targets
+
+```json
+{
+	"type": "timer",
+	"delay": 600,
+	"targets": [
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.STATE",
+			"value": false,
+			"description": "Licht ausschalten"
+		},
+		{
+			"id": "hm-rpc.0.Heizung.SET_TEMPERATURE",
+			"value": 18,
+			"description": "Heizung auf Eco-Modus",
+			"delay": 1000
+		}
+	],
+	"active": true
+}
+```
+
+#### Kombination STATE + TIMER (Automatisches Ausschalten)
+
+Ein STATE-Job kann einen TIMER-Job starten, um ein Device automatisch nach einer bestimmten Zeit auszuschalten:
+
+**STATE-Job (erkennt Einschaltung):**
+```json
+{
+	"type": "state",
+	"triggerState": "hm-rpc.0.Wohnzimmer.Licht.STATE",
+	"triggerValue": true,
+	"targets": [
+		{
+			"id": "cron_scenes.0.jobs.turnOffLight.trigger",
+			"value": true,
+			"description": "Starte Timer-Job beim Einschalten"
+		}
+	],
+	"active": true
+}
+```
+
+**TIMER-Job (schaltet nach 5 Minuten aus):**
+```json
+{
+	"type": "timer",
+	"delay": 300,
+	"targets": [
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.STATE",
+			"value": false,
+			"description": "Licht nach 5 Minuten ausschalten"
+		}
+	],
+	"active": false
+}
+```
+
+✅ **Vorteile von Timer-Jobs:**
+
+- Einfache relative Zeitsteuerung ohne Cron-Expressions
+- Perfekt für "in X Minuten ausschalten" Use Cases
+- Kann manuell getriggert werden (wie MANUAL-Jobs)
+- Kann automatisch durch STATE-Jobs gestartet werden
+- Unterstützt alle Target-Typen (value, state, expression)
+- Automatische Deaktivierung nach Ausführung
+
+⚠️ **Hinweise:**
+
+- `delay` wird in Sekunden angegeben (1-86400, max. 24 Stunden)
+- Timer-Jobs werden nach Ausführung automatisch deaktiviert
+- Beim Neustart des Adapters werden aktive Timer-Jobs neu gestartet
+- Timer werden beim Job-Update oder -Löschen automatisch gestoppt
+
 ## 🔧 Konfigurationsoptionen
 
 In der Adapter-Konfiguration können Sie folgende Parameter einstellen:
@@ -683,6 +781,13 @@ The ioBroker.admin interface will then be available at http://localhost:8181/
 Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev-server#command-line) for more details.
 
 ## Changelog
+
+### 0.6.0 (2025-01-XX)
+
+- (kuen_je) Feature: Timer-Jobs hinzugefügt - Jobs können nach einer relativen Verzögerung (in Sekunden) ausgeführt werden
+- (kuen_je) Feature: Timer-Jobs unterstützen manuelle Auslösung und automatische Aktivierung durch STATE-Jobs
+- (kuen_je) Fixed: ONCE- und TIMER-Jobs werden nach Ausführung korrekt deaktiviert (State wird persistiert)
+- (kuen_je) Fixed: Job-Konfigurations-State wird jetzt aktualisiert, wenn Jobs deaktiviert werden, um Reaktivierung beim Neustart zu verhindern
 
 ### 0.5.1 (2025-01-XX)
 

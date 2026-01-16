@@ -155,8 +155,22 @@ class CronScenes extends utils.Adapter {
           },
           native: {}
         });
+        const timerJobId = `${cronFolder}.timerExample`;
+        await this.setObjectNotExistsAsync(timerJobId, {
+          type: "state",
+          common: {
+            name: "Timer Job Example",
+            type: "string",
+            role: "json",
+            read: true,
+            write: true,
+            desc: "Example timer job configuration - executed after specified delay (in seconds)"
+          },
+          native: {}
+        });
         const manualConfig = (0, import_examples.createExampleJobConfig)("manual", this.config.defaultJobsActive || false);
         const stateConfig = (0, import_examples.createExampleJobConfig)("state", this.config.defaultJobsActive || false);
+        const timerConfig = (0, import_examples.createExampleJobConfig)("timer", this.config.defaultJobsActive || false);
         this.setState(exampleJobId, {
           val: JSON.stringify(exampleConfig, null, 2),
           ack: true
@@ -169,10 +183,15 @@ class CronScenes extends utils.Adapter {
           val: JSON.stringify(stateConfig, null, 2),
           ack: true
         });
+        this.setState(timerJobId, {
+          val: JSON.stringify(timerConfig, null, 2),
+          ack: true
+        });
         this.log.info(`Jobs folder created at: ${cronFolder}`);
         this.log.info(`Example job created at: ${exampleJobId}`);
         this.log.info(`Manual job example created at: ${manualJobId}`);
         this.log.info(`State-triggered job example created at: ${stateJobId}`);
+        this.log.info(`Timer job example created at: ${timerJobId}`);
       } else {
         this.log.info(`Jobs folder created at: ${cronFolder}`);
         this.log.info("Example jobs creation is disabled in adapter configuration");
