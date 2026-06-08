@@ -3,6 +3,10 @@
 		"name": "cron_scenes",
 		"version": "0.6.0",
 		"news": {
+			"0.7.0": {
+				"en": "* Feature: New target type 'toggle' - automatically inverts the current value of a state (true↔false, 0↔1)",
+				"de": "* Feature: Neuer Target-Typ 'toggle' - invertiert den aktuellen Wert eines States automatisch (true↔false, 0↔1)"
+			},
 			"0.6.0": {
 				"en": "* Feature: Timer jobs - Jobs can be executed after a relative delay (in seconds)\n* Feature: Timer jobs support manual triggering and automatic activation by STATE jobs\n* Fixed: ONCE and TIMER jobs are now properly deactivated after execution (state is persisted)\n* Fixed: Job configuration state is now updated when jobs are deactivated to prevent re-activation on restart",
 				"de": "* Feature: Timer-Jobs - Jobs können nach einer relativen Verzögerung (in Sekunden) ausgeführt werden\n* Feature: Timer-Jobs unterstützen manuelle Auslösung und automatische Aktivierung durch STATE-Jobs\n* Behoben: ONCE- und TIMER-Jobs werden nach Ausführung korrekt deaktiviert (State wird persistiert)\n* Behoben: Job-Konfigurations-State wird jetzt aktualisiert, wenn Jobs deaktiviert werden, um Reaktivierung beim Neustart zu verhindern"

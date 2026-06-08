@@ -75,27 +75,30 @@ Hier werden alle Ihre Cron-Jobs gespeichert. Ein Beispiel-Job wird automatisch e
 
 ### 📝 Konfigurationsparameter
 
-| Parameter      | Typ     | Beschreibung                                                                   | Beispiel                       |
-| -------------- | ------- | ------------------------------------------------------------------------------ | ------------------------------ |
-| `cron`         | string  | Cron-Expression für die Zeitsteuerung (optional für `manual` und `state` Jobs) | `"0 7 * * 1-5"`                |
-| `targets`      | array   | Liste der States die gesetzt werden sollen                                     | siehe unten                    |
-| `active`       | boolean | Ob der Job aktiv ist                                                           | `true` / `false`               |
-| `type`         | string  | Job-Typ: `"recurring"`, `"once"`, `"manual"`, `"state"` oder `"timer"`        | `"recurring"`                  |
-| `triggerState` | string  | **Für STATE-Jobs:** State-ID die überwacht werden soll (Pflichtfeld)           | `"hm-rpc.0.Bewegung.DETECTED"` |
-| `triggerValue` | any     | **Für STATE-Jobs:** Optional - Nur bei diesem Wert auslösen                    | `true`, `"auto"`, `21`         |
-| `debounce`     | number  | **Für STATE-Jobs:** Optional - Debounce-Verzögerung in ms (Standard: 100)      | `200`                          |
-| `delay`        | number  | **Für TIMER-Jobs:** Verzögerung in Sekunden vor Ausführung (Pflichtfeld)      | `300` (5 Minuten)              |
+| Parameter       | Typ     | Beschreibung                                                                             | Beispiel                          |
+| --------------- | ------- | ---------------------------------------------------------------------------------------- | --------------------------------- |
+| `cron`          | string  | Cron-Expression für die Zeitsteuerung (optional für `manual` und `state` Jobs)           | `"0 7 * * 1-5"`                   |
+| `targets`       | array   | Liste der States die gesetzt werden sollen                                               | siehe unten                       |
+| `active`        | boolean | Ob der Job aktiv ist                                                                     | `true` / `false`                  |
+| `type`          | string  | Job-Typ: `"recurring"`, `"once"`, `"manual"`, `"state"` oder `"timer"`                   | `"recurring"`                     |
+| `triggerState`  | string  | **Für STATE-Jobs:** State-ID die überwacht werden soll (Pflichtfeld)                     | `"hm-rpc.0.Bewegung.DETECTED"`    |
+| `triggerValue`  | any     | **Für STATE-Jobs:** Optional - Nur bei diesem Wert auslösen                              | `true`, `"auto"`, `21`            |
+| `debounce`      | number  | **Für STATE-Jobs:** Optional - Debounce-Verzögerung in ms (Standard: 100)                | `200`                             |
+| `delay`         | number  | **Für TIMER-Jobs:** Verzögerung in Sekunden vor Ausführung (Pflichtfeld)                 | `300` (5 Minuten)                 |
+| `reTriggerMode` | string  | Optional - Verhalten bei wiederholten Triggern während Job-Ausführung (default: "queue") | `"ignore"`, `"queue"`, `"cancel"` |
 
 #### Target-Konfiguration
 
 Jedes Target hat folgende Eigenschaften:
 
-| Parameter     | Typ    | Beschreibung                                    | Beispiel                             |
-| ------------- | ------ | ----------------------------------------------- | ------------------------------------ |
-| `id`          | string | Die ioBroker State-ID, die gesetzt werden soll  | `"hm-rpc.0.Licht.STATE"`             |
-| `type`        | string | Art des Target-Werts (optional)                 | `"value"`, `"state"`, `"expression"` |
-| `value`       | any    | Der Wert oder die Referenz, abhängig vom `type` | `true`, `"weather.0.temp"`           |
-| `description` | string | Optionale Beschreibung des Targets              | `"Wohnzimmer Licht"`                 |
+| Parameter       | Typ              | Beschreibung                                                       | Beispiel                             |
+| --------------- | ---------------- | ------------------------------------------------------------------ | ------------------------------------ |
+| `id`            | string           | Die ioBroker State-ID, die gesetzt werden soll                     | `"hm-rpc.0.Licht.STATE"`             |
+| `type`          | string           | Art des Target-Werts (optional)                                    | `"value"`, `"state"`, `"expression"` |
+| `value`         | any              | Der Wert oder die Referenz, abhängig vom `type`                    | `true`, `"weather.0.temp"`           |
+| `description`   | string           | Optionale Beschreibung des Targets                                 | `"Wohnzimmer Licht"`                 |
+| `delay`         | number \| string | Optional - Verzögerung in ms oder Zeitstring (z.B. "5m", "1h 30m") | `1000`, `"5m"`, `"1h 30m"`           |
+| `reTriggerMode` | string           | Optional - Verhalten bei wiederholten Triggern (default: "queue")  | `"ignore"`, `"queue"`, `"cancel"`    |
 
 #### Target-Types im Detail
 
@@ -290,6 +293,174 @@ Bestehende Jobs ohne `type`-Feld funktionieren weiterhin:
 	"type": "recurring"
 }
 ```
+
+### Sequenzielle Ausführung mit unterschiedlichen Delays ⏱️
+
+Jedes Target kann ein individuelles `delay`-Feld haben. **Wichtig:** Die Delays sind kumulativ - sie addieren sich auf, da die Targets sequenziell ausgeführt werden.
+
+**Delay-Formate:**
+
+- Zahlen: `100` → 100ms (Millisekunden)
+- Zeitstrings: `"100ms"`, `"1s"`, `"5m"`, `"1h"`, `"1h 30m"`, `"1h 30m 15s"`
+- Langformen: `"1 hour"`, `"30 minutes"`, `"15 seconds"`
+- Maximum: 3600000ms (1 Stunde)
+
+```json
+{
+	"cron": "0 22 * * *",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.LEVEL",
+			"value": 30,
+			"description": "Licht dimmen auf 30%",
+			"delay": 0
+		},
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.LEVEL",
+			"value": 10,
+			"description": "Nach 2 Sekunden weiter dimmen auf 10%",
+			"delay": "2s"
+		},
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.STATE",
+			"value": false,
+			"description": "Nach weiteren 3 Sekunden komplett ausschalten",
+			"delay": "3s"
+		},
+		{
+			"id": "hm-rpc.0.Heizung.SET_TEMPERATURE",
+			"value": 18,
+			"description": "Heizung auf Eco-Modus setzen",
+			"delay": 0
+		}
+	],
+	"active": true,
+	"type": "recurring"
+}
+```
+
+**Oder mit längeren Delays:**
+
+```json
+{
+	"cron": "0 22 * * *",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.LEVEL",
+			"value": 50,
+			"description": "Licht dimmen auf 50%",
+			"delay": "5m"
+		},
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.LEVEL",
+			"value": 20,
+			"description": "Nach weiteren 10 Minuten weiter dimmen",
+			"delay": "10m"
+		},
+		{
+			"id": "hm-rpc.0.Wohnzimmer.Licht.STATE",
+			"value": false,
+			"description": "Nach weiteren 15 Minuten komplett ausschalten",
+			"delay": "15m"
+		}
+	],
+	"active": true,
+	"type": "recurring"
+}
+```
+
+**Ausführungsreihenfolge (kumulativ):**
+
+1. **Sofort (0ms)**: Licht auf 30%
+2. **Nach 2 Sekunden**: Licht auf 10% (2s nach Start)
+3. **Nach weiteren 3 Sekunden (insgesamt 5s)**: Licht ausschalten (5s nach Start)
+4. **Nach weiteren 0 Sekunden (insgesamt 5s)**: Heizung auf 18°C (5s nach Start, direkt nach Licht ausschalten)
+
+**Hinweis:** Da die Targets sequenziell mit `await` ausgeführt werden, addieren sich die Delays auf. Wenn Sie mehrere Targets "gleichzeitig" ausführen möchten, setzen Sie alle auf `delay: 0` oder `delay: "0ms"` und platzieren Sie sie am Anfang der Liste.
+
+### Re-Trigger-Modi (reTriggerMode) 🔄 🆕
+
+Wenn ein Job während der Ausführung erneut getriggert wird, können Sie das Verhalten mit `reTriggerMode` konfigurieren:
+
+#### ignore - Trigger ignorieren
+
+Neue Trigger werden ignoriert, wenn der Job bereits läuft:
+
+```json
+{
+	"type": "state",
+	"triggerState": "hm-rpc.0.Tür.STATE",
+	"triggerValue": true,
+	"reTriggerMode": "ignore",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Flur.Licht.STATE",
+			"value": true,
+			"delay": "15m"
+		}
+	],
+	"active": true
+}
+```
+
+**Verhalten:** Wenn die Tür sich erneut öffnet, während der Job noch läuft, wird der neue Trigger ignoriert.
+
+#### queue - In Queue einreihen (Standard)
+
+Neue Trigger werden in eine Queue eingereiht (max. 10 Einträge):
+
+```json
+{
+	"type": "state",
+	"triggerState": "hm-rpc.0.Tür.STATE",
+	"triggerValue": true,
+	"reTriggerMode": "queue",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Flur.Licht.STATE",
+			"value": true,
+			"delay": "15m"
+		}
+	],
+	"active": true
+}
+```
+
+**Verhalten:** Wenn die Tür sich erneut öffnet, wird der neue Trigger in die Queue eingereiht und nach Abschluss des aktuellen Jobs ausgeführt. Bei mehr als 10 Einträgen wird der Trigger ignoriert.
+
+#### cancel - Laufenden Job abbrechen
+
+Der laufende Job wird abgebrochen und ein neuer startet:
+
+```json
+{
+	"type": "state",
+	"triggerState": "hm-rpc.0.Tür.STATE",
+	"triggerValue": true,
+	"reTriggerMode": "cancel",
+	"targets": [
+		{
+			"id": "hm-rpc.0.Flur.Licht.STATE",
+			"value": true,
+			"delay": "15m"
+		},
+		{
+			"id": "hm-rpc.0.Flur.Licht.LEVEL",
+			"value": 80,
+			"delay": "30m"
+		}
+	],
+	"active": true
+}
+```
+
+**Verhalten:** Wenn die Tür sich erneut öffnet:
+
+- Laufende Delays können nicht gestoppt werden
+- Noch nicht gestartete Targets werden übersprungen
+- Ein neuer Job startet sofort
+
+**Beispiel:** Target 1 läuft (delay 15m), Target 2 wartet noch → Bei erneutem Trigger wird Target 2 übersprungen, neuer Job startet.
 
 ### Toggle-Funktionen mit Expressions 🔄
 
@@ -604,6 +775,7 @@ Für Jobs, die nach einer konfigurierten Verzögerung (in Sekunden) ausgelöst w
 Ein STATE-Job kann einen TIMER-Job starten, um ein Device automatisch nach einer bestimmten Zeit auszuschalten:
 
 **STATE-Job (erkennt Einschaltung):**
+
 ```json
 {
 	"type": "state",
@@ -621,6 +793,7 @@ Ein STATE-Job kann einen TIMER-Job starten, um ein Device automatisch nach einer
 ```
 
 **TIMER-Job (schaltet nach 5 Minuten aus):**
+
 ```json
 {
 	"type": "timer",
@@ -782,6 +955,15 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 
 ## Changelog
 
+<!--
+	Placeholder for the next version (at the beginning of the line):
+	### **WORK IN PROGRESS**
+-->
+
+### **WORK IN PROGRESS**
+
+- (kuen_je) Feature: Neuer Target-Typ `toggle` - invertiert den aktuellen Wert eines States automatisch (true↔false, 0↔1)
+
 ### 0.6.0 (2025-01-XX)
 
 - (kuen_je) Feature: Timer-Jobs hinzugefügt - Jobs können nach einer relativen Verzögerung (in Sekunden) ausgeführt werden
@@ -827,11 +1009,6 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 - (kuen_je) Added periodic cleanup mechanism (every 5 minutes) to remove orphaned objects
 - (kuen_je) Enhanced removeJob() method to automatically clean up associated objects
 - (kuen_je) Fixed trigger permissions issue for REST-API users
-
-<!--
-	Placeholder for the next version (at the beginning of the line):
-	### **WORK IN PROGRESS**
--->
 
 ### 0.2.0 (2025-10-07)
 
