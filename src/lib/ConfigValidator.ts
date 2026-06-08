@@ -1,6 +1,6 @@
 import CronExpressionParser from "cron-parser";
 import * as cron from "node-cron";
-import { CRON_ERROR_CODE, CRON_JOB_TYPE, CRON_TARGET_TYPE } from "./constants";
+import { CRON_ERROR_CODE, CRON_JOB_TYPE, CRON_TARGET_TYPE, RE_TRIGGER_MODE } from "./constants";
 import { CronJobError } from "./errors";
 import { CronJobConfig, CronTarget, CronTargetType } from "./interfaces";
 
@@ -8,6 +8,80 @@ import { CronJobConfig, CronTarget, CronTargetType } from "./interfaces";
  * Validator for cron job configurations
  */
 export class ConfigValidator {
+	/**
+	 * Parse delay value from number or string format to milliseconds
+	 * Supports formats: number (ms), "100ms", "1s", "5m", "1h", "1h 30m", "1h 30m 15s"
+	 */
+	static parseDelay(delay: number | string | undefined): number | undefined {
+		if (delay === undefined) {
+			return undefined;
+		}
+
+		// If it's already a number, assume milliseconds (backward compatibility)
+		if (typeof delay === "number") {
+			return delay;
+		}
+
+		// Parse string format
+		if (typeof delay !== "string") {
+			throw new Error("Delay must be a number or string");
+		}
+
+		const trimmed = delay.trim().toLowerCase();
+		if (!trimmed) {
+			return undefined;
+		}
+
+		// Pattern: matches "1h 30m 15s 100ms" or similar combinations
+		const timePattern =
+			/(\d+)\s*(h|m|s|ms|hour|hours|min|mins|minute|minutes|sec|secs|second|seconds|millisecond|milliseconds)/g;
+		let totalMs = 0;
+		let match;
+
+		while ((match = timePattern.exec(trimmed)) !== null) {
+			const value = parseInt(match[1], 10);
+			const unit = match[2];
+
+			switch (unit) {
+				case "h":
+				case "hour":
+				case "hours":
+					totalMs += value * 60 * 60 * 1000;
+					break;
+				case "m":
+				case "min":
+				case "mins":
+				case "minute":
+				case "minutes":
+					totalMs += value * 60 * 1000;
+					break;
+				case "s":
+				case "sec":
+				case "secs":
+				case "second":
+				case "seconds":
+					totalMs += value * 1000;
+					break;
+				case "ms":
+				case "millisecond":
+				case "milliseconds":
+					totalMs += value;
+					break;
+			}
+		}
+
+		if (totalMs === 0 && trimmed.match(/^\d+$/)) {
+			// If it's just a number without unit, assume milliseconds
+			totalMs = parseInt(trimmed, 10);
+		}
+
+		if (totalMs === 0) {
+			throw new Error(`Invalid delay format: ${delay}`);
+		}
+
+		return totalMs;
+	}
+
 	/**
 	 * Validate a cron job configuration
 	 */
@@ -122,13 +196,31 @@ export class ConfigValidator {
 						CRON_ERROR_CODE.CONFIG_INVALID,
 					);
 				}
+			} else if (targetType === CRON_TARGET_TYPE.TOGGLE) {
+				// Toggle inverts the current value of the target state itself - no value field needed
 			}
 
-			// Validate delay if provided
+			// Validate and parse delay if provided
+			let parsedDelay: number | undefined;
 			if (target.delay !== undefined) {
-				if (typeof target.delay !== "number" || target.delay < 0 || target.delay > 60000) {
+				try {
+					parsedDelay = ConfigValidator.parseDelay(target.delay);
+					if (parsedDelay === undefined) {
+						parsedDelay = 0;
+					}
+					if (parsedDelay < 0 || parsedDelay > 3600000) {
+						throw new CronJobError(
+							`Target ${index} delay must be between 0 and 3600000 milliseconds (1 hour)`,
+							jobId,
+							CRON_ERROR_CODE.CONFIG_INVALID,
+						);
+					}
+				} catch (error) {
+					if (error instanceof CronJobError) {
+						throw error;
+					}
 					throw new CronJobError(
-						`Target ${index} delay must be a number between 0 and 60000 milliseconds`,
+						`Target ${index} delay is invalid: ${error instanceof Error ? error.message : String(error)}`,
 						jobId,
 						CRON_ERROR_CODE.CONFIG_INVALID,
 					);
@@ -140,7 +232,7 @@ export class ConfigValidator {
 				type: targetType,
 				value: target.value,
 				description: target.description || undefined,
-				delay: target.delay || undefined,
+				delay: parsedDelay,
 			};
 		});
 
@@ -213,6 +305,17 @@ export class ConfigValidator {
 			}
 		}
 
+		// Validate reTriggerMode if provided
+		if (config.reTriggerMode !== undefined) {
+			if (!Object.values(RE_TRIGGER_MODE).includes(config.reTriggerMode)) {
+				throw new CronJobError(
+					`reTriggerMode must be one of: ${Object.values(RE_TRIGGER_MODE).join(", ")}`,
+					jobId,
+					CRON_ERROR_CODE.CONFIG_INVALID,
+				);
+			}
+		}
+
 		return {
 			cron:
 				jobType !== CRON_JOB_TYPE.MANUAL && jobType !== CRON_JOB_TYPE.STATE && jobType !== CRON_JOB_TYPE.TIMER
@@ -226,6 +329,7 @@ export class ConfigValidator {
 			triggerOnChange: config.triggerOnChange,
 			debounce: config.debounce,
 			delay: config.delay,
+			reTriggerMode: config.reTriggerMode || RE_TRIGGER_MODE.QUEUE, // Default to queue
 		};
 	}
 }

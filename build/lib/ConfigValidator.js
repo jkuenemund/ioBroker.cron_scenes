@@ -37,6 +37,65 @@ var import_constants = require("./constants");
 var import_errors = require("./errors");
 class ConfigValidator {
   /**
+   * Parse delay value from number or string format to milliseconds
+   * Supports formats: number (ms), "100ms", "1s", "5m", "1h", "1h 30m", "1h 30m 15s"
+   */
+  static parseDelay(delay) {
+    if (delay === void 0) {
+      return void 0;
+    }
+    if (typeof delay === "number") {
+      return delay;
+    }
+    if (typeof delay !== "string") {
+      throw new Error("Delay must be a number or string");
+    }
+    const trimmed = delay.trim().toLowerCase();
+    if (!trimmed) {
+      return void 0;
+    }
+    const timePattern = /(\d+)\s*(h|m|s|ms|hour|hours|min|mins|minute|minutes|sec|secs|second|seconds|millisecond|milliseconds)/g;
+    let totalMs = 0;
+    let match;
+    while ((match = timePattern.exec(trimmed)) !== null) {
+      const value = parseInt(match[1], 10);
+      const unit = match[2];
+      switch (unit) {
+        case "h":
+        case "hour":
+        case "hours":
+          totalMs += value * 60 * 60 * 1e3;
+          break;
+        case "m":
+        case "min":
+        case "mins":
+        case "minute":
+        case "minutes":
+          totalMs += value * 60 * 1e3;
+          break;
+        case "s":
+        case "sec":
+        case "secs":
+        case "second":
+        case "seconds":
+          totalMs += value * 1e3;
+          break;
+        case "ms":
+        case "millisecond":
+        case "milliseconds":
+          totalMs += value;
+          break;
+      }
+    }
+    if (totalMs === 0 && trimmed.match(/^\d+$/)) {
+      totalMs = parseInt(trimmed, 10);
+    }
+    if (totalMs === 0) {
+      throw new Error(`Invalid delay format: ${delay}`);
+    }
+    return totalMs;
+  }
+  /**
    * Validate a cron job configuration
    */
   static validateCronJobConfig(config, jobId) {
@@ -125,11 +184,28 @@ class ConfigValidator {
             import_constants.CRON_ERROR_CODE.CONFIG_INVALID
           );
         }
+      } else if (targetType === import_constants.CRON_TARGET_TYPE.TOGGLE) {
       }
+      let parsedDelay;
       if (target.delay !== void 0) {
-        if (typeof target.delay !== "number" || target.delay < 0 || target.delay > 6e4) {
+        try {
+          parsedDelay = ConfigValidator.parseDelay(target.delay);
+          if (parsedDelay === void 0) {
+            parsedDelay = 0;
+          }
+          if (parsedDelay < 0 || parsedDelay > 36e5) {
+            throw new import_errors.CronJobError(
+              `Target ${index} delay must be between 0 and 3600000 milliseconds (1 hour)`,
+              jobId,
+              import_constants.CRON_ERROR_CODE.CONFIG_INVALID
+            );
+          }
+        } catch (error) {
+          if (error instanceof import_errors.CronJobError) {
+            throw error;
+          }
           throw new import_errors.CronJobError(
-            `Target ${index} delay must be a number between 0 and 60000 milliseconds`,
+            `Target ${index} delay is invalid: ${error instanceof Error ? error.message : String(error)}`,
             jobId,
             import_constants.CRON_ERROR_CODE.CONFIG_INVALID
           );
@@ -140,7 +216,7 @@ class ConfigValidator {
         type: targetType,
         value: target.value,
         description: target.description || void 0,
-        delay: target.delay || void 0
+        delay: parsedDelay
       };
     });
     if (typeof config.active !== "boolean") {
@@ -194,6 +270,15 @@ class ConfigValidator {
         );
       }
     }
+    if (config.reTriggerMode !== void 0) {
+      if (!Object.values(import_constants.RE_TRIGGER_MODE).includes(config.reTriggerMode)) {
+        throw new import_errors.CronJobError(
+          `reTriggerMode must be one of: ${Object.values(import_constants.RE_TRIGGER_MODE).join(", ")}`,
+          jobId,
+          import_constants.CRON_ERROR_CODE.CONFIG_INVALID
+        );
+      }
+    }
     return {
       cron: jobType !== import_constants.CRON_JOB_TYPE.MANUAL && jobType !== import_constants.CRON_JOB_TYPE.STATE && jobType !== import_constants.CRON_JOB_TYPE.TIMER ? config.cron : void 0,
       targets: validatedTargets,
@@ -203,7 +288,9 @@ class ConfigValidator {
       triggerValue: config.triggerValue,
       triggerOnChange: config.triggerOnChange,
       debounce: config.debounce,
-      delay: config.delay
+      delay: config.delay,
+      reTriggerMode: config.reTriggerMode || import_constants.RE_TRIGGER_MODE.QUEUE
+      // Default to queue
     };
   }
 }

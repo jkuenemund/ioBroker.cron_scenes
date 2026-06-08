@@ -21,7 +21,8 @@ __export(constants_exports, {
   CRON_ERROR_CODE: () => CRON_ERROR_CODE,
   CRON_JOB_STATUS: () => CRON_JOB_STATUS,
   CRON_JOB_TYPE: () => CRON_JOB_TYPE,
-  CRON_TARGET_TYPE: () => CRON_TARGET_TYPE
+  CRON_TARGET_TYPE: () => CRON_TARGET_TYPE,
+  RE_TRIGGER_MODE: () => RE_TRIGGER_MODE
 });
 module.exports = __toCommonJS(constants_exports);
 const CRON_JOB_STATUS = {
@@ -38,7 +39,13 @@ const CRON_JOB_TYPE = {
 };
 const CRON_TARGET_TYPE = {
   VALUE: "value",
-  STATE: "state"
+  STATE: "state",
+  TOGGLE: "toggle"
+};
+const RE_TRIGGER_MODE = {
+  IGNORE: "ignore",
+  QUEUE: "queue",
+  CANCEL: "cancel"
 };
 const CRON_ERROR_CODE = {
   INVALID_CRON: "INVALID_CRON",
@@ -51,6 +58,7 @@ const CRON_ERROR_CODE = {
   CRON_ERROR_CODE,
   CRON_JOB_STATUS,
   CRON_JOB_TYPE,
-  CRON_TARGET_TYPE
+  CRON_TARGET_TYPE,
+  RE_TRIGGER_MODE
 });
 //# sourceMappingURL=constants.js.map

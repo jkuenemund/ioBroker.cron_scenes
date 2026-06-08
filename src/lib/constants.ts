@@ -18,11 +18,19 @@ export const CRON_JOB_TYPE = {
 export const CRON_TARGET_TYPE = {
 	VALUE: "value",
 	STATE: "state",
+	TOGGLE: "toggle",
+} as const;
+
+export const RE_TRIGGER_MODE = {
+	IGNORE: "ignore",
+	QUEUE: "queue",
+	CANCEL: "cancel",
 } as const;
 
 export type CronJobStatusType = (typeof CRON_JOB_STATUS)[keyof typeof CRON_JOB_STATUS];
 export type CronJobTypeType = (typeof CRON_JOB_TYPE)[keyof typeof CRON_JOB_TYPE];
 export type CronTargetType = (typeof CRON_TARGET_TYPE)[keyof typeof CRON_TARGET_TYPE];
+export type ReTriggerModeType = (typeof RE_TRIGGER_MODE)[keyof typeof RE_TRIGGER_MODE];
 
 /**
  * Custom error types for better error handling

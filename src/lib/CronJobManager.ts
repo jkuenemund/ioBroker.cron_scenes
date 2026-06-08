@@ -1,7 +1,7 @@
 import CronExpressionParser from "cron-parser";
 import * as cron from "node-cron";
 import { ConfigValidator } from "./ConfigValidator";
-import { CRON_JOB_STATUS, CRON_JOB_TYPE, CRON_TARGET_TYPE } from "./constants";
+import { CRON_JOB_STATUS, CRON_JOB_TYPE, CRON_TARGET_TYPE, RE_TRIGGER_MODE } from "./constants";
 import { CRON_ERROR_CODE, CronJobError } from "./errors";
 import { AdapterInterface, CronJobConfig, CronJobStatus, CronTarget, RegisteredCronJob } from "./interfaces";
 
@@ -18,6 +18,9 @@ export class CronJobManager {
 	private triggerStateSubscriptions = new Map<string, string[]>(); // triggerState -> [jobIds]
 	private debounceTimers = new Map<string, NodeJS.Timeout>(); // jobId -> timer
 	private timers = new Map<string, NodeJS.Timeout>(); // jobId -> timer (for TIMER jobs)
+	private runningJobs = new Map<string, { cancelled: boolean; promise: Promise<void> }>(); // jobId -> running execution
+	private jobQueues = new Map<string, Array<boolean>>(); // jobId -> queue of pending executions (markers)
+	private processingQueues = new Map<string, boolean>(); // jobId -> is processing queue
 
 	constructor(private adapter: AdapterInterface) {}
 
@@ -155,6 +158,21 @@ export class CronJobManager {
 			this.adapter.log.debug(`CronJobManager: Cleaned up timer for job ${jobId}`);
 		}
 		this.timers.clear();
+
+		// Clean up running jobs
+		for (const [jobId, runningJob] of this.runningJobs) {
+			runningJob.cancelled = true;
+			this.adapter.log.debug(`CronJobManager: Cancelled running job ${jobId}`);
+		}
+		this.runningJobs.clear();
+
+		// Clean up job queues
+		for (const [jobId] of this.jobQueues) {
+			this.jobQueues.delete(jobId);
+			this.adapter.log.debug(`CronJobManager: Cleared queue for job ${jobId}`);
+		}
+		this.jobQueues.clear();
+		this.processingQueues.clear();
 
 		// Unsubscribe from all trigger states
 		for (const [triggerState] of this.triggerStateSubscriptions) {
@@ -387,6 +405,19 @@ export class CronJobManager {
 				this.timers.delete(jobId);
 				this.adapter.log.debug(`CronJobManager: Cleaned up timer for job ${jobId}`);
 			}
+
+			// Cancel running job execution
+			const runningJob = this.runningJobs.get(jobId);
+			if (runningJob) {
+				runningJob.cancelled = true;
+				this.runningJobs.delete(jobId);
+				this.adapter.log.debug(`CronJobManager: Cancelled running job ${jobId}`);
+			}
+
+			// Clean up queue
+			this.jobQueues.delete(jobId);
+			this.processingQueues.delete(jobId);
+			this.adapter.log.debug(`CronJobManager: Cleaned up queue for job ${jobId}`);
 
 			this.jobs.delete(jobId);
 			this.adapter.log.info(`CronJobManager: Removed job ${jobId}`);
@@ -629,14 +660,36 @@ export class CronJobManager {
 
 			// Check if job needs to be updated
 			const existingJob = this.jobs.get(jobId);
-			if (existingJob && JSON.stringify(existingJob.config) !== JSON.stringify(config)) {
-				this.adapter.log.info(`CronJobManager: Config changed during refresh for job ${jobId}, updating job`);
-				// Stop existing job but keep status/trigger objects when updating
-				if (existingJob.task) {
-					existingJob.task.stop();
+			if (existingJob) {
+				// Normalize both configs for comparison (deep sort keys)
+				const normalizeConfig = (obj: any): any => {
+					if (obj === null || typeof obj !== "object") {
+						return obj;
+					}
+					if (Array.isArray(obj)) {
+						return obj.map(normalizeConfig);
+					}
+					const sorted: any = {};
+					for (const key of Object.keys(obj).sort()) {
+						sorted[key] = normalizeConfig(obj[key]);
+					}
+					return sorted;
+				};
+				const existingConfigStr = JSON.stringify(normalizeConfig(existingJob.config));
+				const newConfigStr = JSON.stringify(normalizeConfig(config));
+
+				if (existingConfigStr !== newConfigStr) {
+					this.adapter.log.info(
+						`CronJobManager: Config changed during refresh for job ${jobId}, updating job`,
+					);
+					// Stop existing job but keep status/trigger objects when updating
+					if (existingJob.task) {
+						existingJob.task.stop();
+					}
+					// Don't delete the job entry yet - preserve runningJobs and queues
+					this.jobs.delete(jobId);
+					await this.addOrUpdateJob(jobId, config);
 				}
-				this.jobs.delete(jobId);
-				await this.addOrUpdateJob(jobId, config);
 			}
 		} catch (error) {
 			this.adapter.log.error(`CronJobManager: Error refreshing job config for ${jobId}: ${error}`);
@@ -655,12 +708,111 @@ export class CronJobManager {
 				throw new CronJobError(`Job ${jobId} not found`, jobId, CRON_ERROR_CODE.TARGET_NOT_FOUND);
 			}
 
+			// Check if job is already running
+			const runningJob = this.runningJobs.get(jobId);
+			if (runningJob) {
+				const reTriggerMode = job.config.reTriggerMode || RE_TRIGGER_MODE.QUEUE;
+
+				if (reTriggerMode === RE_TRIGGER_MODE.IGNORE) {
+					this.adapter.log.info(
+						`CronJobManager: Job ${jobId} is already running, ignoring trigger (reTriggerMode: ignore)`,
+					);
+					return;
+				} else if (reTriggerMode === RE_TRIGGER_MODE.QUEUE) {
+					// Get or create queue
+					const queue = this.jobQueues.get(jobId) || [];
+					const isProcessing = this.processingQueues.get(jobId);
+
+					// Check if queue is full
+					if (queue.length >= 10) {
+						this.adapter.log.warn(
+							`CronJobManager: Job ${jobId} queue is full (10 entries), ignoring trigger`,
+						);
+						return;
+					}
+
+					// Add to queue (always, since job is already running)
+					const queuePosition = queue.length + 1;
+					queue.push(true); // Just a marker - execution happens in processJobQueue
+					this.jobQueues.set(jobId, queue);
+					this.adapter.log.info(
+						`CronJobManager: Job ${jobId} queued for execution (position: ${queuePosition})`,
+					);
+
+					// Start processing queue if not already processing
+					if (!isProcessing) {
+						this.processJobQueue(jobId).catch((error) => {
+							this.adapter.log.error(`CronJobManager: Error processing queue for job ${jobId}: ${error}`);
+						});
+					}
+					return;
+				} else if (reTriggerMode === RE_TRIGGER_MODE.CANCEL) {
+					// Cancel running job
+					runningJob.cancelled = true;
+					this.adapter.log.info(`CronJobManager: Job ${jobId} cancelled, starting new execution`);
+					// Continue with new execution below
+				}
+			}
+
+			// Create running job entry FIRST, then execute
+			const runningJobEntry = { cancelled: false, promise: Promise.resolve() };
+			this.runningJobs.set(jobId, runningJobEntry);
+
+			// Execute and update promise reference
+			const executionPromise = this.executeJobInternal(jobId, startTime, runningJobEntry);
+			runningJobEntry.promise = executionPromise;
+
+			// Wait for execution to complete
+			await executionPromise;
+
+			// Remove from running jobs
+			this.runningJobs.delete(jobId);
+		} catch (error) {
+			// Remove from running jobs on error
+			this.runningJobs.delete(jobId);
+			throw error;
+		}
+	}
+
+	/**
+	 * Internal method to execute a cron job (without reTriggerMode checks)
+	 */
+	private async executeJobInternal(
+		jobId: string,
+		startTime: string,
+		runningJobRef?: { cancelled: boolean; promise: Promise<void> },
+	): Promise<void> {
+		try {
+			const job = this.jobs.get(jobId);
+			if (!job) {
+				throw new CronJobError(`Job ${jobId} not found`, jobId, CRON_ERROR_CODE.TARGET_NOT_FOUND);
+			}
+
+			// Use the passed reference or get from map
+			const runningJob = runningJobRef || this.runningJobs.get(jobId);
+			if (runningJob?.cancelled) {
+				this.adapter.log.info(`CronJobManager: Job ${jobId} execution was cancelled`);
+				return;
+			}
+
 			this.adapter.log.info(`CronJobManager: Executing job ${jobId}`);
 
 			// Execute all targets
 			for (const target of job.config.targets) {
+				// Check if job was cancelled before executing each target
+				if (runningJob?.cancelled) {
+					this.adapter.log.debug(`CronJobManager: Job ${jobId} was cancelled, skipping remaining targets`);
+					return;
+				}
+
 				this.adapter.log.debug(`CronJobManager: Executing target ${target.id} with value ${target.value}`);
-				await this.executeTarget(target);
+				await this.executeTarget(target, jobId, runningJob);
+			}
+
+			// Check if job was cancelled before updating status
+			if (runningJob?.cancelled) {
+				this.adapter.log.info(`CronJobManager: Job ${jobId} execution was cancelled, not updating status`);
+				return;
 			}
 
 			// Update status
@@ -713,32 +865,119 @@ export class CronJobManager {
 			this.adapter.log.error(`CronJobManager: Error executing job ${jobId}: ${error}`);
 
 			const job = this.jobs.get(jobId);
-			const errorStatus: CronJobStatus = {
-				lastRun: startTime,
-				status: CRON_JOB_STATUS.ERROR,
-				error: error instanceof Error ? error.message : String(error),
-				nextRun:
-					job?.config.active && job.config.type === CRON_JOB_TYPE.RECURRING && job.config.cron
-						? this.getNextRunTime(job.config.cron)
-						: undefined,
-			};
+			const runningJob = this.runningJobs.get(jobId);
+			if (!runningJob?.cancelled) {
+				const errorStatus: CronJobStatus = {
+					lastRun: startTime,
+					status: CRON_JOB_STATUS.ERROR,
+					error: error instanceof Error ? error.message : String(error),
+					nextRun:
+						job?.config.active && job.config.type === CRON_JOB_TYPE.RECURRING && job.config.cron
+							? this.getNextRunTime(job.config.cron)
+							: undefined,
+				};
 
-			if (job) {
-				job.status = errorStatus;
+				if (job) {
+					job.status = errorStatus;
+				}
+				await this.updateJobStatus(jobId, errorStatus);
 			}
-			await this.updateJobStatus(jobId, errorStatus);
+		}
+	}
+
+	/**
+	 * Process job queue sequentially
+	 */
+	private async processJobQueue(jobId: string): Promise<void> {
+		// Prevent parallel processing
+		if (this.processingQueues.get(jobId)) {
+			return;
+		}
+
+		this.processingQueues.set(jobId, true);
+
+		try {
+			// Wait for the current running job to complete first
+			const currentRunningJob = this.runningJobs.get(jobId);
+			if (currentRunningJob) {
+				try {
+					await currentRunningJob.promise;
+				} catch {
+					// Ignore errors from the original job
+				}
+			}
+
+			while (true) {
+				const queue = this.jobQueues.get(jobId);
+				if (!queue || queue.length === 0) {
+					break;
+				}
+
+				const queueEntry = queue.shift();
+				if (queueEntry) {
+					// Create running job entry FIRST for queued execution
+					const runningJobEntry = { cancelled: false, promise: Promise.resolve() };
+					this.runningJobs.set(jobId, runningJobEntry);
+
+					try {
+						// Execute with the reference
+						const executionPromise = this.executeJobInternal(
+							jobId,
+							this.toMEZ(new Date()),
+							runningJobEntry,
+						);
+						runningJobEntry.promise = executionPromise;
+						await executionPromise;
+					} catch (error) {
+						this.adapter.log.error(`CronJobManager: Error executing queued job ${jobId}: ${error}`);
+					} finally {
+						// Remove from running jobs after completion
+						this.runningJobs.delete(jobId);
+					}
+				}
+			}
+		} finally {
+			this.processingQueues.delete(jobId);
+			this.jobQueues.delete(jobId);
 		}
 	}
 
 	/**
 	 * Execute a single target
 	 */
-	private async executeTarget(target: CronTarget): Promise<void> {
+	private async executeTarget(
+		target: CronTarget,
+		jobId: string,
+		runningJobRef?: { cancelled: boolean; promise: Promise<void> },
+	): Promise<void> {
 		try {
+			// Use the passed reference or get from map
+			const runningJob = runningJobRef || this.runningJobs.get(jobId);
+
+			// Check if job was cancelled before executing target
+			if (runningJob?.cancelled) {
+				this.adapter.log.debug(`CronJobManager: Skipping target ${target.id} - job was cancelled`);
+				return;
+			}
+
 			// Apply delay if specified
-			if (target.delay && target.delay > 0) {
-				this.adapter.log.debug(`CronJobManager: Delaying execution of ${target.id} by ${target.delay}ms`);
-				await new Promise((resolve) => setTimeout(resolve, target.delay));
+			const delayMs =
+				typeof target.delay === "number"
+					? target.delay
+					: target.delay
+						? ConfigValidator.parseDelay(target.delay)
+						: 0;
+			if (delayMs && delayMs > 0) {
+				this.adapter.log.debug(`CronJobManager: Delaying execution of ${target.id} by ${delayMs}ms`);
+				await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+				// Check again after delay if job was cancelled
+				if (runningJob?.cancelled) {
+					this.adapter.log.debug(
+						`CronJobManager: Skipping target ${target.id} - job was cancelled after delay`,
+					);
+					return;
+				}
 			}
 
 			// Resolve the target value based on type
@@ -786,6 +1025,28 @@ export class CronJobManager {
 					return sourceState.val;
 				} catch (error) {
 					this.adapter.log.error(`CronJobManager: Error reading source state ${target.value}: ${error}`);
+					throw error;
+				}
+
+			case CRON_TARGET_TYPE.TOGGLE:
+				// Read current value of the target state and return its inverse
+				try {
+					const currentState = await this.adapter.getStateAsync(target.id);
+					if (currentState === null || currentState === undefined) {
+						this.adapter.log.warn(`CronJobManager: Toggle target ${target.id} not found, defaulting to true`);
+						return true;
+					}
+					const currentVal = currentState.val;
+					if (typeof currentVal === "boolean") {
+						return !currentVal;
+					}
+					if (typeof currentVal === "number") {
+						return currentVal === 0 ? 1 : 0;
+					}
+					// Fallback: treat any truthy value as true
+					return !currentVal;
+				} catch (error) {
+					this.adapter.log.error(`CronJobManager: Error reading toggle target ${target.id}: ${error}`);
 					throw error;
 				}
 
