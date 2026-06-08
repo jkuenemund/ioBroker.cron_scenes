@@ -10,7 +10,7 @@ export interface CronTarget {
 	type?: CronTargetType; // Optional for backward compatibility
 	value: string | number | boolean | null;
 	description?: string;
-	delay?: number; // Optional delay in milliseconds before executing this target
+	delay?: number | string; // Optional delay in milliseconds or time string (e.g. '5m', '1h 30m')
 }
 
 /**
@@ -28,6 +28,8 @@ export interface CronJobConfig {
 	debounce?: number; // Optional - Debounce delay in ms (default: 100)
 	// Fields for TIMER jobs
 	delay?: number; // Required for TIMER jobs - Delay in seconds before execution
+	// Fields for re-trigger behavior
+	reTriggerMode?: "ignore" | "queue" | "cancel"; // Optional - Verhalten bei wiederholten Triggern (default: "queue")
 }
 
 /**
